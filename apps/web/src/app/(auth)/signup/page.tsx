@@ -27,7 +27,7 @@ export default function SignupPage() {
       setError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
       return;
     }
-    router.replace('/');
+    router.replace('/painel');
     router.refresh();
   }
 

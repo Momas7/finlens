@@ -30,7 +30,7 @@ export default function LoginPage() {
       );
       return;
     }
-    router.replace('/');
+    router.replace('/painel');
     router.refresh();
   }
 

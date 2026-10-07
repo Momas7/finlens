@@ -58,7 +58,7 @@ export function ThemeToggle() {
       className="inline-flex h-9 items-center gap-2 rounded-[6px] px-2.5 text-[13px] text-ink-soft hover:bg-ink/5 hover:text-ink"
     >
       <ThemeIcon pref={pref} />
-      <span>{LABEL[pref]}</span>
+      <span className="hidden sm:inline">{LABEL[pref]}</span>
     </button>
   );
 }

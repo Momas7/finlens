@@ -5,11 +5,14 @@ import {
   date,
   foreignKey,
   index,
+  integer,
+  numeric,
   pgTable,
   smallint,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { workspaces } from './workspaces';
@@ -74,6 +77,14 @@ export const categories = pgTable(
       foreignColumns: [t.workspaceId, t.id],
     }),
     check('categories_kind_check', sql`${t.kind} in ('expense', 'income', 'movement')`),
+    // Nome único entre irmãs ativas, sem diferenciar maiúsculas (raízes têm parent_id nulo).
+    uniqueIndex('categories_sibling_name_idx')
+      .on(
+        t.workspaceId,
+        sql`coalesce(${t.parentId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+        sql`lower(${t.name})`,
+      )
+      .where(sql`${t.archivedAt} is null`),
   ],
 );
 
@@ -90,6 +101,17 @@ export const transactions = pgTable(
     description: text().notNull(),
     notes: text(),
     source: text({ enum: ['manual'] }).notNull(),
+    descriptionNormalized: text().notNull().default(''),
+    merchantKey: text(),
+    classificationStatus: text({ enum: ['auto', 'likely', 'suggested', 'confirmed', 'none'] })
+      .notNull()
+      .default('none'),
+    classificationSource: text({
+      enum: ['rule', 'history', 'similar', 'merchant', 'keyword', 'user'],
+    }),
+    classificationConfidence: numeric({ precision: 4, scale: 3, mode: 'number' }),
+    classificationExplanation: text(),
+    suggestedCategoryId: uuid(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true })
       .notNull()
@@ -107,9 +129,88 @@ export const transactions = pgTable(
       columns: [t.workspaceId, t.categoryId],
       foreignColumns: [categories.workspaceId, categories.id],
     }),
+    foreignKey({
+      name: 'transactions_suggested_category_fk',
+      columns: [t.workspaceId, t.suggestedCategoryId],
+      foreignColumns: [categories.workspaceId, categories.id],
+    }),
+    unique('transactions_workspace_id_id_key').on(t.workspaceId, t.id),
+    check(
+      'transactions_classification_status_check',
+      sql`${t.classificationStatus} in ('auto', 'likely', 'suggested', 'confirmed', 'none')`,
+    ),
+    check(
+      'transactions_classification_source_check',
+      sql`${t.classificationSource} is null or ${t.classificationSource} in ('rule', 'history', 'similar', 'merchant', 'keyword', 'user')`,
+    ),
+    index('transactions_description_trgm_idx').using(
+      'gin',
+      sql`${t.descriptionNormalized} gin_trgm_ops`,
+    ),
+    index('transactions_workspace_merchant_idx').on(t.workspaceId, t.merchantKey),
     check('transactions_amount_check', sql`${t.amountCents} <> 0`),
     check('transactions_source_check', sql`${t.source} in ('manual')`),
     index('transactions_workspace_date_idx').on(t.workspaceId, t.postedDate.desc(), t.id.desc()),
     index('transactions_workspace_account_date_idx').on(t.workspaceId, t.accountId, t.postedDate),
+  ],
+);
+
+export const classificationRules = pgTable(
+  'classification_rules',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    categoryId: uuid().notNull(),
+    /** Texto normalizado procurado na descrição normalizada (ou chave de estabelecimento). */
+    pattern: text().notNull(),
+    minAmountCents: bigint({ mode: 'bigint' }),
+    maxAmountCents: bigint({ mode: 'bigint' }),
+    accountId: uuid(),
+    priority: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: 'classification_rules_category_fk',
+      columns: [t.workspaceId, t.categoryId],
+      foreignColumns: [categories.workspaceId, categories.id],
+    }),
+    foreignKey({
+      name: 'classification_rules_account_fk',
+      columns: [t.workspaceId, t.accountId],
+      foreignColumns: [financialAccounts.workspaceId, financialAccounts.id],
+    }),
+  ],
+);
+
+/** Cada decisão do usuário, com o que o motor tinha previsto naquele momento. */
+export const classificationFeedback = pgTable(
+  'classification_feedback',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    // FK composta com ON DELETE SET NULL (transaction_id) criada na migration custom.
+    transactionId: uuid(),
+    predictedCategoryId: uuid(),
+    predictedConfidence: numeric({ precision: 4, scale: 3, mode: 'number' }),
+    predictedSource: text(),
+    chosenCategoryId: uuid(),
+    merchantKey: text(),
+    descriptionNormalized: text().notNull(),
+    amountBucket: text({ enum: ['xs', 'sm', 'md', 'lg'] }).notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: 'classification_feedback_predicted_fk',
+      columns: [t.workspaceId, t.predictedCategoryId],
+      foreignColumns: [categories.workspaceId, categories.id],
+    }),
+    foreignKey({
+      name: 'classification_feedback_chosen_fk',
+      columns: [t.workspaceId, t.chosenCategoryId],
+      foreignColumns: [categories.workspaceId, categories.id],
+    }),
+    index('classification_feedback_workspace_idx').on(t.workspaceId, t.createdAt),
   ],
 );

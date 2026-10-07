@@ -37,6 +37,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Classifier evaluation gate
+        run: pnpm eval:classifier --check
       - run: pnpm --filter @finlens/web build
 
   integration:

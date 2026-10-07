@@ -66,7 +66,7 @@ export function RenameCategory({ category }: { category: CategoryNode }) {
   const onSubmit = useKeepValuesSubmit(action);
   return (
     <details className="group">
-      <summary className="cursor-pointer rounded-[6px] px-2 py-1 text-[13px] text-ink-soft hover:text-ink">
+      <summary className="inline-flex h-8 cursor-pointer list-none items-center rounded-[6px] px-2.5 text-[13px] font-medium text-ink-soft hover:bg-ink/5 hover:text-ink [&::-webkit-details-marker]:hidden">
         Renomear<span className="sr-only"> {category.name}</span>
       </summary>
       <form
@@ -112,12 +112,7 @@ export function ArchiveCategory({ category }: { category: CategoryNode }) {
           e.preventDefault();
       }}
     >
-      <Button
-        type="submit"
-        variant="ghost"
-        className="h-8 px-2 text-[13px]"
-        aria-label={`Arquivar ${category.name}`}
-      >
+      <Button type="submit" variant="ghost" size="sm" aria-label={`Arquivar ${category.name}`}>
         Arquivar
       </Button>
     </form>
@@ -132,12 +127,7 @@ export function DeleteRule({ id, pattern }: { id: string; pattern: string }) {
         if (!window.confirm(`Excluir a regra "${pattern}"?`)) e.preventDefault();
       }}
     >
-      <Button
-        type="submit"
-        variant="ghost"
-        className="h-8 px-2 text-[13px]"
-        aria-label={`Excluir regra ${pattern}`}
-      >
+      <Button type="submit" variant="ghost" size="sm" aria-label={`Excluir regra ${pattern}`}>
         Excluir
       </Button>
     </form>

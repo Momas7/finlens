@@ -43,7 +43,11 @@ export async function buildApp(deps: {
 
   await app.register(helmet);
   await app.register(cors, { origin: config.webOrigin, credentials: true });
-  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
+  await app.register(rateLimit, {
+    global: true,
+    max: config.rateLimitPerMinute,
+    timeWindow: '1 minute',
+  });
 
   registerErrorHandler(app);
 

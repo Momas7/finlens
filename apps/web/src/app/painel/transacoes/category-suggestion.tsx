@@ -25,7 +25,10 @@ export function CategorySuggestion({
   income: boolean;
   accountId: string;
 }) {
-  const [state, setState] = useState<State>({ kind: 'idle' });
+  // Com descrição já preenchida (edição), começa em "Classificando…" em vez do convite a digitar.
+  const [state, setState] = useState<State>(
+    description.trim() ? { kind: 'loading' } : { kind: 'idle' },
+  );
 
   useEffect(() => {
     const text = description.trim();

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ButtonHTMLAttributes, ComponentProps } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
-type Size = 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg';
 
 const base =
   'inline-flex items-center justify-center gap-2 rounded-[6px] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-55';
@@ -12,6 +12,7 @@ const variants: Record<Variant, string> = {
   ghost: 'text-ink-soft hover:bg-ink/5 hover:text-ink',
 };
 const sizes: Record<Size, string> = {
+  sm: 'h-8 px-2.5 text-[13px]',
   md: 'h-10 px-4 text-[15px]',
   lg: 'h-12 px-5 text-[15px]',
 };

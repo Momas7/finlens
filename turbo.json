@@ -25,7 +25,8 @@
         "NODE_ENV",
         "CI",
         "AUTH_RATE_LIMIT_PER_MINUTE",
-        "TRUSTED_PROXIES"
+        "TRUSTED_PROXIES",
+        "RATE_LIMIT_PER_MINUTE"
       ]
     },
     "test:e2e": {
@@ -43,7 +44,8 @@
         "NODE_ENV",
         "CI",
         "AUTH_RATE_LIMIT_PER_MINUTE",
-        "TRUSTED_PROXIES"
+        "TRUSTED_PROXIES",
+        "RATE_LIMIT_PER_MINUTE"
       ]
     },
     "dev": {
@@ -62,7 +64,8 @@
         "NODE_ENV",
         "CI",
         "AUTH_RATE_LIMIT_PER_MINUTE",
-        "TRUSTED_PROXIES"
+        "TRUSTED_PROXIES",
+        "RATE_LIMIT_PER_MINUTE"
       ]
     }
   }

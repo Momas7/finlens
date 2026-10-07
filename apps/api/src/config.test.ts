@@ -16,6 +16,7 @@ describe('loadConfig', () => {
       logLevel: 'info',
       isProduction: false,
       authRateLimitPerMinute: 10,
+      rateLimitPerMinute: 300,
       trustedProxies: [],
     });
   });
@@ -24,6 +25,12 @@ describe('loadConfig', () => {
     expect(
       loadConfig({ ...validEnv, TRUSTED_PROXIES: '10.0.0.5, 127.0.0.1' }).trustedProxies,
     ).toEqual(['10.0.0.5', '127.0.0.1']);
+  });
+
+  it('limite global configurável', () => {
+    expect(loadConfig({ ...validEnv, RATE_LIMIT_PER_MINUTE: '5000' }).rateLimitPerMinute).toBe(
+      5000,
+    );
   });
 
   it('limite de autenticação configurável', () => {

@@ -29,7 +29,7 @@ export default async function CategoriasPage() {
           {tree.map((root) => (
             <li key={root.id} className="border-b border-scale last:border-b-0">
               <div className="flex flex-wrap items-start justify-between gap-2 px-5 py-3">
-                <span className="pt-1 font-medium">{root.name}</span>
+                <span className="pt-1.5 font-medium">{root.name}</span>
                 <div className="flex items-start gap-1">
                   <RenameCategory category={root} />
                   <ArchiveCategory category={root} />
@@ -40,9 +40,9 @@ export default async function CategoriasPage() {
                   {root.children.map((child) => (
                     <li
                       key={child.id}
-                      className="flex flex-wrap items-start justify-between gap-2 py-1.5 pr-5 pl-10"
+                      className="flex flex-wrap items-start justify-between gap-2 py-1 pr-5 pl-10"
                     >
-                      <span className="pt-1 text-ink-soft">{child.name}</span>
+                      <span className="pt-1.5 text-ink-soft">{child.name}</span>
                       <div className="flex items-start gap-1">
                         <RenameCategory category={child} />
                         <ArchiveCategory category={child} />

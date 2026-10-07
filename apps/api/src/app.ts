@@ -8,6 +8,7 @@ import type { Config } from './config';
 import { registerErrorHandler } from './http/errors';
 import { accountRoutes } from './modules/accounts/routes';
 import { categoryRoutes } from './modules/categories/routes';
+import { classificationRoutes } from './modules/classification/routes';
 import { healthRoutes } from './modules/health/routes';
 import { meRoutes } from './modules/me/routes';
 import { transactionRoutes } from './modules/transactions/routes';
@@ -53,6 +54,7 @@ export async function buildApp(deps: {
   await app.register(accountRoutes, { db });
   await app.register(categoryRoutes, { db });
   await app.register(transactionRoutes, { db });
+  await app.register(classificationRoutes, { db });
 
   return app;
 }

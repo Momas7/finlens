@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClassificationSource, ClassificationStatus } from './classification';
 import { Cents, IsoDate, NonZeroCents, Uuid } from './money';
 
 const Description = z
@@ -8,9 +9,12 @@ const Description = z
   .max(140, 'Use até 140 caracteres.');
 const Notes = z.string().trim().max(500, 'Use até 500 caracteres.').nullish();
 
+/** "auto": o servidor classifica; UUID: escolha do usuário (confirmada); null: sem categoria. */
+export const CategoryChoice = z.union([z.literal('auto'), Uuid, z.null()]);
+
 export const TransactionCreate = z.object({
   accountId: Uuid,
-  categoryId: Uuid.nullish(),
+  categoryId: CategoryChoice.default('auto'),
   postedDate: IsoDate,
   amountCents: NonZeroCents,
   description: Description,
@@ -18,7 +22,8 @@ export const TransactionCreate = z.object({
 });
 export type TransactionCreate = z.infer<typeof TransactionCreate>;
 
-export const TransactionUpdate = TransactionCreate.partial()
+export const TransactionUpdate = TransactionCreate.extend({ categoryId: CategoryChoice })
+  .partial()
   .strict()
   .refine((input) => Object.keys(input).length > 0, 'Informe ao menos um campo para alterar.');
 export type TransactionUpdate = z.infer<typeof TransactionUpdate>;
@@ -33,6 +38,12 @@ export const Transaction = z.object({
   description: z.string(),
   notes: z.string().nullable(),
   source: z.literal('manual'),
+  classificationStatus: ClassificationStatus,
+  classificationSource: ClassificationSource.nullable(),
+  classificationConfidence: z.number().nullable(),
+  classificationExplanation: z.string().nullable(),
+  suggestedCategoryId: Uuid.nullable(),
+  merchantKey: z.string().nullable(),
 });
 export type Transaction = z.infer<typeof Transaction>;
 

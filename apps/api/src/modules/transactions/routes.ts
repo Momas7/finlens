@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError, notFound } from '../../http/errors';
 import { findAccount } from '../accounts/repository';
+import { type CategoryDecision, categorize, recordFeedback } from './categorize';
 import { categoryExists, findTransaction, listTransactions, toTransactionDto } from './repository';
 
 function transactionId(request: FastifyRequest): string {
@@ -53,21 +54,35 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
   app.post('/v1/transactions', auth, async (request, reply) => {
     const input = TransactionCreate.parse(request.body);
     const created = await withTenant(opts.db, request.tenant, async (tx) => {
-      const month = await resolveRefs(tx, input.accountId, input.categoryId, input.postedDate);
+      const chosen = input.categoryId === 'auto' ? undefined : input.categoryId;
+      const month = await resolveRefs(tx, input.accountId, chosen, input.postedDate);
+      const decision: CategoryDecision =
+        input.categoryId === 'auto'
+          ? 'auto'
+          : input.categoryId === null
+            ? null
+            : { chosen: input.categoryId };
+      const amountCents = BigInt(input.amountCents);
+      const { fields, feedback } = await categorize(tx, decision, {
+        description: input.description,
+        amountCents,
+        accountId: input.accountId,
+      });
       const [row] = await tx
         .insert(transactions)
         .values({
           workspaceId: request.tenant.workspaceId,
           accountId: input.accountId,
-          categoryId: input.categoryId ?? null,
           postedDate: input.postedDate,
           statementMonth: month,
-          amountCents: BigInt(input.amountCents),
+          amountCents,
           description: input.description,
           notes: input.notes ?? null,
           source: 'manual',
+          ...fields,
         })
         .returning();
+      if (row) await recordFeedback(tx, request.tenant.workspaceId, row.id, feedback);
       return row;
     });
     return reply.status(201).send(created && toTransactionDto(created));
@@ -81,22 +96,51 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
       if (!current) throw notFound('Lançamento');
       const accountId = input.accountId ?? current.accountId;
       const postedDate = input.postedDate ?? current.postedDate;
-      const categoryId = input.categoryId === undefined ? current.categoryId : input.categoryId;
-      const month = await resolveRefs(tx, accountId, categoryId, postedDate, current.accountId);
+      const description = input.description ?? current.description;
+      const amountCents =
+        input.amountCents !== undefined ? BigInt(input.amountCents) : current.amountCents;
+      const chosen =
+        typeof input.categoryId === 'string' && input.categoryId !== 'auto'
+          ? input.categoryId
+          : undefined;
+      const month = await resolveRefs(tx, accountId, chosen, postedDate, current.accountId);
+
+      const inputsChanged =
+        description !== current.description ||
+        amountCents !== current.amountCents ||
+        accountId !== current.accountId;
+      let decision: CategoryDecision;
+      if (input.categoryId === 'auto' || input.categoryId === null) decision = input.categoryId;
+      else if (chosen) {
+        // Reenviar a mesma categoria já confirmada não gera feedback repetido.
+        decision =
+          chosen === current.categoryId && current.classificationStatus === 'confirmed'
+            ? 'keep'
+            : { chosen };
+      } else if (current.classificationStatus === 'confirmed' || !inputsChanged) decision = 'keep';
+      else decision = 'auto';
+
+      const { fields, feedback } = await categorize(tx, decision, {
+        description,
+        amountCents,
+        accountId,
+        transactionId: id,
+      });
       const [row] = await tx
         .update(transactions)
         .set({
           accountId,
           postedDate,
-          categoryId,
+          description,
+          amountCents,
           statementMonth: month,
-          ...(input.amountCents !== undefined && { amountCents: BigInt(input.amountCents) }),
-          ...(input.description !== undefined && { description: input.description }),
           ...(input.notes !== undefined && { notes: input.notes }),
+          ...fields,
         })
         .where(eq(transactions.id, id))
         .returning();
       if (!row) throw notFound('Lançamento');
+      await recordFeedback(tx, request.tenant.workspaceId, id, feedback);
       return toTransactionDto(row);
     });
   });

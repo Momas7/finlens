@@ -30,3 +30,13 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+test('erro de login legível (claro)', async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem('finlens-theme', 'light'));
+  await page.goto('/login');
+  await page.getByLabel('E-mail').fill('ninguem@example.com');
+  await page.getByLabel('Senha').fill('senha-errada-123');
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByRole('main').getByRole('alert')).toBeVisible();
+  expect(await seriousViolations(page)).toEqual([]);
+});

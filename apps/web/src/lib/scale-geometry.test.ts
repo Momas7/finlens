@@ -18,16 +18,25 @@ describe('scaleGeometry', () => {
       limitPct: 75,
     }));
 
-  it('acima do máximo não vaza', () =>
+  it('acima do máximo reescala a régua e mostra o excedente', () =>
     expect(scaleGeometry({ value: 1200, max: 750, limit: 750 })).toMatchObject({
-      filledPct: 100,
-      overPct: 0,
+      axisMax: 1200,
+      filledPct: 62.5,
+      overPct: 37.5,
       markerPct: 100,
-      limitPct: 100,
+      limitPct: 62.5,
     }));
 
-  it('excedente limitado ao fim da régua', () =>
-    expect(scaleGeometry({ value: 2000, max: 1000, limit: 600 }).overPct).toBe(40));
+  it('dentro do máximo mantém o eixo', () =>
+    expect(scaleGeometry({ value: 612, max: 750 }).axisMax).toBe(750));
+
+  it('excedente além do máximo vai até o fim da régua estendida', () =>
+    expect(scaleGeometry({ value: 2000, max: 1000, limit: 600 })).toMatchObject({
+      axisMax: 2000,
+      filledPct: 30,
+      overPct: 70,
+      limitPct: 30,
+    }));
 
   it.each([[{ value: 10, max: 0 }], [{ value: -5, max: 100 }], [{ value: Number.NaN, max: 100 }]])(
     'degenerado %j',

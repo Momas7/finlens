@@ -28,7 +28,7 @@ export function ThemeToggle() {
   const [pref, setPref] = useState<ThemePreference>('system');
 
   useEffect(() => {
-    setPref(readStoredTheme(window.localStorage));
+    setPref(readStoredTheme(() => window.localStorage));
   }, []);
 
   useEffect(() => {

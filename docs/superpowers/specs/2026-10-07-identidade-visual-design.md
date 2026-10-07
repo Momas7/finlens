@@ -30,7 +30,7 @@ Materiais de instrumentos de medição: alumínio, grafite, trena. A **régua gr
 | `scale` | traços, bordas | `#B7C0C7` | `#3A434B` |
 | `tape` | medida | `#F2C230` | `#F2C230` |
 | `on-tape` | texto sobre `tape` | `#2B2205` | `#2B2205` |
-| `mark` | acima do limite, erro | `#C93A2B` | `#F0705F` |
+| `mark` | acima do limite, erro | `#B83325` | `#F0705F` |
 | `gain` | entrada de dinheiro | `#2E7D6B` | `#5FC2A8` |
 
 Regras: vermelho/verde nunca são o único sinal (sempre com +/− ou texto). Botão primário usa `ink`.
@@ -52,7 +52,7 @@ Uma família: **Archivo** (Google Fonts, variável, `wdth` 62–125, `wght` 100�
 
 ## Componentes (`apps/web/src/components/ui/`)
 
-- **`Scale`** — régua graduada. Props: `value`, `max`, `limit?`, `ticks?` (padrão 10), `label`, `valueText`. Trecho até `min(value, limit ?? max)` em `tape`; o que passa do limite em `mark`. Marcador vertical no valor atual. `role="meter"` com `aria-valuemin/max/now` e `aria-valuetext`. Geometria calculada por `scaleGeometry()` (função pura).
+- **`Scale`** — régua graduada. Props: `value`, `max`, `limit?`, `ticks?` (padrão 10), `label`, `valueText`. Trecho até `min(value, limit ?? max)` em `tape`; o que passa do limite em `mark`. Marcador vertical no valor atual. Valor acima de `max` estende a régua até o valor, para o excedente continuar visível. `role="meter"` com `aria-valuemin/max/now` e `aria-valuetext`. Geometria calculada por `scaleGeometry()` (função pura).
 - **`Figure`** — valor de destaque condensado e tabular com legenda.
 - **`Button`** — `primary` | `secondary` | `ghost`; também renderiza como link.
 - **`Field`** — rótulo, input, ajuda e erro; erro ligado via `aria-describedby` e `aria-invalid`.

@@ -3,10 +3,15 @@ export type ResolvedTheme = 'light' | 'dark';
 
 export const THEME_STORAGE_KEY = 'finlens-theme';
 
-/** Lê a preferência salva; valor inválido, ausente ou storage bloqueado viram `system`. */
-export function readStoredTheme(storage: Pick<Storage, 'getItem'> | undefined): ThemePreference {
+/**
+ * Lê a preferência salva; valor inválido, ausente ou storage bloqueado viram `system`.
+ * Recebe uma função porque, com cookies bloqueados, até ler `window.localStorage` lança.
+ */
+export function readStoredTheme(
+  getStorage: () => Pick<Storage, 'getItem'> | undefined,
+): ThemePreference {
   try {
-    const value = storage?.getItem(THEME_STORAGE_KEY);
+    const value = getStorage()?.getItem(THEME_STORAGE_KEY);
     return value === 'light' || value === 'dark' ? value : 'system';
   } catch {
     return 'system';

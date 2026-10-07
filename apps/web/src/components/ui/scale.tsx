@@ -21,8 +21,8 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
       role="meter"
       aria-label={label}
       aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={value}
+      aria-valuemax={g.axisMax || max}
+      aria-valuenow={Number.isFinite(value) ? Math.min(Math.max(value, 0), g.axisMax || max) : 0}
       aria-valuetext={valueText}
       className={`relative h-4 w-full ${className}`}
     >

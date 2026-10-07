@@ -21,7 +21,13 @@ describe('auth e /v1/me', () => {
     testDb = await createTestDatabase();
     ownerDb = createDb(testDb.ownerUrl);
     db = createDb(testDb.appUrl);
-    const config = loadConfig({ ...process.env, DATABASE_URL: testDb.appUrl, LOG_LEVEL: 'trace' });
+    const config = loadConfig({
+      ...process.env,
+      DATABASE_URL: testDb.appUrl,
+      LOG_LEVEL: 'trace',
+      // Proxy reverso de teste; o Next (127.0.0.1) fica fora da lista, como no padrão.
+      TRUSTED_PROXIES: '10.9.9.9',
+    });
     const stream = new Writable({
       write(chunk, _enc, cb) {
         logLines.push(chunk.toString());
@@ -127,9 +133,15 @@ describe('auth e /v1/me', () => {
   }
 
   it('atrás de proxy confiável, o limite vale por IP real', async () => {
-    for (let i = 0; i < 10; i++) await signIn('127.0.0.1', '198.51.100.20');
-    expect(await signIn('127.0.0.1', '198.51.100.20')).toBe(429);
-    expect(await signIn('127.0.0.1', '198.51.100.21')).not.toBe(429);
+    for (let i = 0; i < 10; i++) await signIn('10.9.9.9', '198.51.100.20');
+    expect(await signIn('10.9.9.9', '198.51.100.20')).toBe(429);
+    expect(await signIn('10.9.9.9', '198.51.100.21')).not.toBe(429);
+  });
+
+  it('pelo Next (não confiável), X-Forwarded-For forjado não troca o IP', async () => {
+    const codes: number[] = [];
+    for (let i = 0; i < 11; i++) codes.push(await signIn('127.0.0.1', `203.0.113.${100 + i}`));
+    expect(codes[10]).toBe(429);
   });
 
   it('cliente direto não troca de IP forjando X-Forwarded-For', async () => {

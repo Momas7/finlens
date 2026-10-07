@@ -1,0 +1,12 @@
+import { defineConfig } from 'vitest/config';
+
+process.loadEnvFile?.(new URL('../../.env', import.meta.url));
+
+export default defineConfig({
+  test: {
+    include: ['test/**/*.integration.test.ts'],
+    fileParallelism: false,
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+  },
+});

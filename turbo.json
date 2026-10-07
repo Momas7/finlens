@@ -1,11 +1,63 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**", "!.next/cache/**"] },
-    "typecheck": { "dependsOn": ["^build"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["API_URL"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
     "test": {},
-    "test:integration": { "cache": false },
-    "test:e2e": { "cache": false },
-    "dev": { "cache": false, "persistent": true }
+    "test:integration": {
+      "cache": false,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_OWNER_URL",
+        "TEST_DATABASE_ADMIN_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "WEB_ORIGIN",
+        "API_URL",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "CI"
+      ]
+    },
+    "test:e2e": {
+      "cache": false,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_OWNER_URL",
+        "TEST_DATABASE_ADMIN_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "WEB_ORIGIN",
+        "API_URL",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "CI"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_OWNER_URL",
+        "TEST_DATABASE_ADMIN_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "WEB_ORIGIN",
+        "API_URL",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "CI"
+      ]
+    }
   }
 }

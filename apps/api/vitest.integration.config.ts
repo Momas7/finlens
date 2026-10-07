@@ -1,6 +1,9 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
-process.loadEnvFile?.(new URL('../../.env', import.meta.url));
+// Local: lê o .env da raiz. CI: variáveis vêm do ambiente do job.
+const envFile = new URL('../../.env', import.meta.url);
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 export default defineConfig({
   test: {

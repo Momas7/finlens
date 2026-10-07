@@ -36,7 +36,8 @@ export async function buildApp(deps: {
       ? { ...deps.logger, redact: REDACT }
       : { level: config.logLevel, redact: REDACT };
 
-  const app = Fastify({ logger, bodyLimit: 1024 * 1024 });
+  // Só proxies listados podem informar o IP do cliente; os demais usam o IP da conexão.
+  const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy: config.trustedProxies });
 
   await app.register(helmet);
   await app.register(cors, { origin: config.webOrigin, credentials: true });

@@ -34,6 +34,11 @@ export function createAuth(db: Db, config: Config, log: FastifyBaseLogger) {
     // Rate limit é feito pelo Fastify, que conhece o IP real da requisição.
     rateLimit: { enabled: false },
     telemetry: { enabled: false },
+    // Logs do Better Auth vão para o pino (estrutura e redaction); argumentos extras são descartados.
+    logger: {
+      level: 'warn',
+      log: (level, message) => log[level]({ component: 'better-auth' }, message),
+    },
     advanced: { useSecureCookies: config.isProduction },
     databaseHooks: {
       user: {

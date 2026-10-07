@@ -16,6 +16,7 @@ describe('loadConfig', () => {
       logLevel: 'info',
       isProduction: false,
       authRateLimitPerMinute: 10,
+      trustedProxies: ['127.0.0.1', '::1'],
     });
   });
 

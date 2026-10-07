@@ -9,6 +9,8 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
+  // Proxies cujo X-Forwarded-For é aceito (IPs ou CIDRs). Padrão: o Next.js na mesma máquina.
+  TRUSTED_PROXIES: z.string().default('127.0.0.1,::1'),
 });
 
 export type Config = {
@@ -21,6 +23,7 @@ export type Config = {
   isProduction: boolean;
   /** Tentativas de login/cadastro por minuto por IP. */
   authRateLimitPerMinute: number;
+  trustedProxies: string[];
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -39,5 +42,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     logLevel: e.LOG_LEVEL,
     isProduction: e.NODE_ENV === 'production',
     authRateLimitPerMinute: e.AUTH_RATE_LIMIT_PER_MINUTE,
+    trustedProxies: e.TRUSTED_PROXIES.split(',')
+      .map((p) => p.trim())
+      .filter(Boolean),
   };
 }

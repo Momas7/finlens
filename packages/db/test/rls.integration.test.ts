@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb, type Db, user, withTenant, workspaceMembers, workspaces } from '../src';
 import { createTestDatabase } from './helpers/test-db';
@@ -72,6 +72,29 @@ describe('RLS', () => {
         tx.insert(workspaces).values({ name: 'x', personalOwnerId: u2 }),
       ),
     ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/row-level security/) } });
+  });
+
+  it('não consegue se inserir como membro de workspace alheio', async () => {
+    await expect(
+      withTenant(db, { userId: u1 }, (tx) =>
+        tx.insert(workspaceMembers).values({ workspaceId: w2, userId: u1, role: 'owner' }),
+      ),
+    ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/row-level security/) } });
+    const ws = await withTenant(db, { userId: u1, workspaceId: w2 }, (tx) =>
+      tx.select().from(workspaces),
+    );
+    expect(ws.map((r) => r.id)).toEqual([w1]);
+  });
+
+  it('não consegue alterar o próprio role', async () => {
+    const updated = await withTenant(db, { userId: u1, workspaceId: w1 }, (tx) =>
+      tx
+        .update(workspaceMembers)
+        .set({ role: 'member' })
+        .where(eq(workspaceMembers.userId, u1))
+        .returning(),
+    );
+    expect(updated).toHaveLength(0);
   });
 
   it('contexto não vaza entre transações do pool', async () => {

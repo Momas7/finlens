@@ -15,6 +15,13 @@
       "when": 1791338893835,
       "tag": "0001_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791339800715,
+      "tag": "0002_workspace_members_write_policies",
+      "breakpoints": true
     }
   ]
 }

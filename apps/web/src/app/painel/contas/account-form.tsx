@@ -1,7 +1,7 @@
 'use client';
 
 import type { Account } from '@finlens/contracts';
-import { useActionState, useState } from 'react';
+import { type FormEvent, startTransition, useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { type FormState, saveAccount } from './actions';
@@ -23,10 +23,18 @@ export function AccountForm({ account, today }: { account?: Account; today: stri
   const [state, action, pending] = useActionState<FormState, FormData>(saveAccount, {});
   const [type, setType] = useState<string>(account?.type ?? 'checking');
   const errors = state.fieldErrors ?? {};
+
+  // Com `action` direto, o React limpa campos não controlados ao fim da action, mesmo
+  // quando ela devolve erros de validação. Enviar por aqui preserva o que foi digitado.
+  function submitKeepingValues(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => action(data));
+  }
   const isCard = type === 'credit_card';
 
   return (
-    <form action={action} className="max-w-md space-y-5" noValidate>
+    <form action={action} onSubmit={submitKeepingValues} className="max-w-md space-y-5" noValidate>
       {account && <input type="hidden" name="id" value={account.id} />}
       <Field
         label="Nome"

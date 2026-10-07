@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+function definedEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter((e): e is [string, string] => e[1] !== undefined),
+  );
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -10,6 +16,8 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @finlens/api dev',
+      // Todo o tráfego do e2e chega pelo mesmo IP; o limite padrão (10/min) barraria os cadastros.
+      env: { ...definedEnv(), AUTH_RATE_LIMIT_PER_MINUTE: '1000' },
       url: 'http://localhost:3333/health',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

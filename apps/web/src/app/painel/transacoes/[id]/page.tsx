@@ -12,7 +12,7 @@ export default async function EditarTransacaoPage({
   const { id } = await params;
   const [transaction, accounts, tree] = await Promise.all([
     apiFetch(`/v1/transactions/${encodeURIComponent(id)}`, Transaction).catch(() => null),
-    apiFetch('/v1/accounts', AccountList),
+    apiFetch('/v1/accounts?includeArchived=true', AccountList),
     apiFetch('/v1/categories', CategoryTree),
   ]);
   if (!transaction) notFound();

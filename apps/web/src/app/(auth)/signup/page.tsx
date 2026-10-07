@@ -24,7 +24,11 @@ export default function SignupPage() {
     });
     setPending(false);
     if (signUpError) {
-      setError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
+      setError(
+        signUpError.status === 429
+          ? 'Muitas tentativas. Tente novamente em instantes.'
+          : 'Não foi possível criar a conta. Verifique os dados e tente novamente.',
+      );
       return;
     }
     router.replace('/painel');

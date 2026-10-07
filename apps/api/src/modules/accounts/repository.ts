@@ -20,6 +20,7 @@ function toDto(row: AccountRow, movedCents: bigint, invoiceByMonth: Map<string, 
     balanceCents: isCard ? null : (row.openingBalanceCents + movedCents).toString(),
     openInvoiceCents: month ? (-(invoiceByMonth.get(month) ?? 0n)).toString() : null,
     currentStatementMonth: month,
+    archived: row.archivedAt !== null,
   };
 }
 
@@ -55,11 +56,11 @@ async function enrich(tx: Tx, rows: AccountRow[]): Promise<Account[]> {
   });
 }
 
-export async function listAccounts(tx: Tx): Promise<Account[]> {
+export async function listAccounts(tx: Tx, includeArchived = false): Promise<Account[]> {
   const rows = await tx
     .select()
     .from(financialAccounts)
-    .where(isNull(financialAccounts.archivedAt))
+    .where(includeArchived ? undefined : isNull(financialAccounts.archivedAt))
     .orderBy(financialAccounts.createdAt);
   return enrich(tx, rows);
 }

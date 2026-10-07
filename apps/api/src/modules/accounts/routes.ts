@@ -22,9 +22,12 @@ function accountId(request: FastifyRequest): string {
 export async function accountRoutes(app: FastifyInstance, opts: { db: Db }) {
   const auth = { preHandler: app.requireAuth };
 
-  app.get('/v1/accounts', auth, async (request) =>
-    withTenant(opts.db, request.tenant, (tx) => listAccounts(tx)),
-  );
+  app.get('/v1/accounts', auth, async (request) => {
+    // Arquivadas só quando pedido: telas de edição precisam mostrar a conta de lançamentos antigos.
+    const includeArchived =
+      (request.query as { includeArchived?: string }).includeArchived === 'true';
+    return withTenant(opts.db, request.tenant, (tx) => listAccounts(tx, includeArchived));
+  });
 
   app.post('/v1/accounts', auth, async (request, reply) => {
     const input = AccountCreate.parse(request.body);

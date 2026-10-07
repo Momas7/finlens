@@ -1,9 +1,10 @@
-import { AccountList, CategoryTree, TransactionPage } from '@finlens/contracts';
+import { AccountList, CategoryTree, TransactionPage, TransactionQuery } from '@finlens/contracts';
 import Link from 'next/link';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Panel } from '@/components/ui/panel';
 import { Select } from '@/components/ui/select';
+import { accountLabel } from '@/lib/accounts';
 import { apiFetch } from '@/lib/api';
 import { categoryLabels, categoryOptions } from '@/lib/categories';
 import { formatCents } from '@/lib/money';
@@ -18,20 +19,28 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 export default async function TransacoesPage({ searchParams }: PageProps<'/painel/transacoes'>) {
   const params = await searchParams;
+  // Filtro inválido na URL (data impossível, busca longa) é descartado em vez de quebrar a página.
   const filters = new URLSearchParams();
+  let droppedFilter = false;
   for (const key of FILTERS) {
     const value = params[key];
-    if (typeof value === 'string' && value.trim() !== '') filters.set(key, value.trim());
+    if (typeof value !== 'string' || value.trim() === '') continue;
+    if (TransactionQuery.shape[key].safeParse(value.trim()).success) filters.set(key, value.trim());
+    else droppedFilter = true;
   }
   const query = new URLSearchParams(filters);
-  if (typeof params.cursor === 'string') query.set('cursor', params.cursor);
+  const cursor = params.cursor;
+  if (typeof cursor === 'string' && TransactionQuery.shape.cursor.safeParse(cursor).success) {
+    query.set('cursor', cursor);
+  }
 
   const [page, accounts, tree] = await Promise.all([
     apiFetch(`/v1/transactions?${query}`, TransactionPage),
-    apiFetch('/v1/accounts', AccountList),
+    apiFetch('/v1/accounts?includeArchived=true', AccountList),
     apiFetch('/v1/categories', CategoryTree),
   ]);
-  const accountNames = new Map(accounts.map((a) => [a.id, a.name]));
+  const accountNames = new Map(accounts.map((a) => [a.id, accountLabel(a)]));
+  const activeAccounts = accounts.filter((a) => !a.archived);
   const labels = categoryLabels(tree);
   const nextHref = page.nextCursor
     ? `/painel/transacoes?${new URLSearchParams({ ...Object.fromEntries(filters), cursor: page.nextCursor })}`
@@ -44,6 +53,14 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
         <ButtonLink href="/painel/transacoes/nova">Novo lançamento</ButtonLink>
       </div>
 
+      {droppedFilter && (
+        <p
+          role="alert"
+          className="rounded-[6px] border border-scale bg-raised px-4 py-3 text-[13px]"
+        >
+          Alguns filtros eram inválidos e foram ignorados.
+        </p>
+      )}
       <search aria-label="Filtrar transações">
         <form
           method="get"
@@ -54,11 +71,12 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
             label="Buscar"
             name="q"
             type="search"
+            maxLength={100}
             defaultValue={filters.get('q') ?? ''}
           />
           <Select label="Conta" name="accountId" defaultValue={filters.get('accountId') ?? ''}>
             <option value="">Todas</option>
-            {accounts.map((a) => (
+            {activeAccounts.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
               </option>

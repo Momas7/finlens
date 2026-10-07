@@ -109,6 +109,55 @@ describe('/v1/categories e /v1/transactions', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  it('lançamento de conta arquivada pode ser editado sem trocar de conta', async () => {
+    const id = (
+      await ana({
+        method: 'POST',
+        url: '/v1/accounts',
+        payload: { name: 'Antiga', type: 'cash', openingBalanceDate: '2026-10-01' },
+      })
+    ).json().id;
+    const tx = (
+      await post(ana, {
+        accountId: id,
+        postedDate: '2026-10-02',
+        amountCents: '-100',
+        description: 'antes',
+      })
+    ).json().id;
+    await ana({ method: 'DELETE', url: `/v1/accounts/${id}` });
+    const res = await ana({
+      method: 'PATCH',
+      url: `/v1/transactions/${tx}`,
+      payload: { description: 'depois' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ accountId: id, description: 'depois' });
+    const other = (
+      await ana({
+        method: 'POST',
+        url: '/v1/accounts',
+        payload: { name: 'Outra', type: 'cash', openingBalanceDate: '2026-10-01' },
+      })
+    ).json().id;
+    const moveInto = await post(ana, {
+      accountId: other,
+      postedDate: '2026-10-02',
+      amountCents: '-100',
+      description: 'x',
+    });
+    const moved = await ana({
+      method: 'PATCH',
+      url: `/v1/transactions/${moveInto.json().id}`,
+      payload: { accountId: id },
+    });
+    expect(moved.statusCode).toBe(409);
+    const all = (await ana({ method: 'GET', url: '/v1/accounts?includeArchived=true' })).json();
+    expect(all.find((a: { id: string }) => a.id === id)).toMatchObject({ archived: true });
+    const active = (await ana({ method: 'GET', url: '/v1/accounts' })).json();
+    expect(active.find((a: { id: string }) => a.id === id)).toBeUndefined();
+  });
+
   it('conta arquivada → 409', async () => {
     const id = (
       await ana({

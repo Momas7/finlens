@@ -19,10 +19,12 @@ async function resolveRefs(
   accountId: string,
   categoryId: string | null | undefined,
   postedDate: string,
+  currentAccountId?: string,
 ): Promise<string | null> {
   const account = await findAccount(tx, accountId);
   if (!account) throw notFound('Conta');
-  if (account.archivedAt) {
+  // Conta arquivada não recebe lançamentos novos, mas os antigos continuam editáveis nela.
+  if (account.archivedAt && accountId !== currentAccountId) {
     throw new ApiError(409, 'conflict', 'Esta conta está arquivada e não aceita lançamentos.', {
       accountId: 'Conta arquivada.',
     });
@@ -80,7 +82,7 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
       const accountId = input.accountId ?? current.accountId;
       const postedDate = input.postedDate ?? current.postedDate;
       const categoryId = input.categoryId === undefined ? current.categoryId : input.categoryId;
-      const month = await resolveRefs(tx, accountId, categoryId, postedDate);
+      const month = await resolveRefs(tx, accountId, categoryId, postedDate, current.accountId);
       const [row] = await tx
         .update(transactions)
         .set({

@@ -15,7 +15,14 @@ describe('loadConfig', () => {
       port: 3333,
       logLevel: 'info',
       isProduction: false,
+      authRateLimitPerMinute: 10,
     });
+  });
+
+  it('limite de autenticação configurável', () => {
+    expect(
+      loadConfig({ ...validEnv, AUTH_RATE_LIMIT_PER_MINUTE: '500' }).authRateLimitPerMinute,
+    ).toBe(500);
   });
 
   it('lista variáveis ausentes', () => {

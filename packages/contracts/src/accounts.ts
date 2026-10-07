@@ -57,6 +57,7 @@ export const Account = z.object({
   balanceCents: Cents.nullable(),
   openInvoiceCents: Cents.nullable(),
   currentStatementMonth: IsoDate.nullable(),
+  archived: z.boolean(),
 });
 export type Account = z.infer<typeof Account>;
 export const AccountList = z.array(Account);

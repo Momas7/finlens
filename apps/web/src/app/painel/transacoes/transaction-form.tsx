@@ -1,10 +1,11 @@
 'use client';
 
 import type { Account, Transaction } from '@finlens/contracts';
-import { useActionState, useState } from 'react';
+import { type FormEvent, startTransition, useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
+import { accountLabel } from '@/lib/accounts';
 import type { CategoryOption } from '@/lib/categories';
 import { type FormState, saveTransaction } from './actions';
 
@@ -31,6 +32,14 @@ export function TransactionForm({
     transaction && !transaction.amountCents.startsWith('-') ? 'income' : 'expense',
   );
   const errors = state.fieldErrors ?? {};
+
+  // Com `action` direto, o React limpa campos não controlados ao fim da action, mesmo
+  // quando ela devolve erros de validação. Enviar por aqui preserva o que foi digitado.
+  function submitKeepingValues(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => action(data));
+  }
   const visible = groups
     .map((g) => ({
       ...g,
@@ -39,7 +48,7 @@ export function TransactionForm({
     .filter((g) => g.options.length > 0);
 
   return (
-    <form action={action} className="max-w-xl space-y-5" noValidate>
+    <form action={action} onSubmit={submitKeepingValues} className="max-w-xl space-y-5" noValidate>
       {transaction && <input type="hidden" name="id" value={transaction.id} />}
       <fieldset>
         <legend className="text-[13px] font-medium">Tipo</legend>
@@ -100,11 +109,13 @@ export function TransactionForm({
           defaultValue={transaction?.accountId}
           error={errors.accountId}
         >
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
+          {accounts
+            .filter((a) => !a.archived || a.id === transaction?.accountId)
+            .map((a) => (
+              <option key={a.id} value={a.id}>
+                {accountLabel(a)}
+              </option>
+            ))}
         </Select>
         <Select
           key={kind}

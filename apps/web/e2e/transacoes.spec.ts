@@ -73,4 +73,42 @@ test('valor inválido mostra erro', async ({ page }) => {
   await page.getByRole('button', { name: 'Salvar lançamento' }).click();
   await expect(page.getByLabel('Valor')).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByText('Informe um valor maior que zero, como 45,90.')).toBeVisible();
+  await expect(page.getByLabel('Descrição')).toHaveValue('Teste');
+  await expect(page.getByLabel('Valor')).toHaveValue('abc');
+});
+
+test('editar lançamento de conta arquivada mantém a conta', async ({ page }) => {
+  await signUp(page);
+  await createCheckingAccount(page, 'Inter');
+  await createCheckingAccount(page, 'Nubank');
+  await launch(page, {
+    kind: 'Saída',
+    amount: '10,00',
+    description: 'Padaria',
+    category: 'Alimentação › Padaria',
+  });
+  await page.getByRole('link', { name: 'Contas' }).click();
+  await page.getByRole('link', { name: 'Inter' }).click();
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Arquivar conta' }).click();
+  await expect(page).toHaveURL(/\/painel\/contas$/);
+  await expect(page.getByRole('row', { name: /^Inter/ })).toHaveCount(0);
+  await page.goto('/painel/transacoes');
+  await expect(page.getByRole('row', { name: /Padaria.*Inter \(arquivada\)/ })).toBeVisible();
+  await page.getByRole('link', { name: 'Padaria' }).click();
+  await page.getByLabel('Descrição').fill('Padaria da esquina');
+  await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+  await expect(
+    page.getByRole('row', { name: /Padaria da esquina.*Inter \(arquivada\)/ }),
+  ).toBeVisible();
+});
+
+test('filtros inválidos na URL não quebram a página', async ({ page }) => {
+  await signUp(page);
+  await page.goto('/painel/transacoes?from=2026-02-31');
+  await expect(page.getByRole('heading', { name: 'Transações' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(
+    'Alguns filtros eram inválidos',
+  );
+  await expect(page.getByLabel('Buscar')).toHaveAttribute('maxlength', '100');
 });

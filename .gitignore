@@ -1,0 +1,14 @@
+node_modules/
+.turbo/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+fixtures/private/
+playwright-report/
+test-results/
+.superpowers/
+.DS_Store

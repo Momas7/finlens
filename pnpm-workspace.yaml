@@ -2,5 +2,7 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
+  # esbuild (via tsx/drizzle-kit) usa o binário do pacote opcional da plataforma; postinstall não é necessário.
+  esbuild: false
   sharp: false
   unrs-resolver: false

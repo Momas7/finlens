@@ -6,7 +6,12 @@ export type AccountType = z.infer<typeof AccountType>;
 
 const Name = z.string().trim().min(1, 'Informe um nome.').max(60, 'Use até 60 caracteres.');
 const Institution = z.string().trim().max(60, 'Use até 60 caracteres.').nullish();
-const Day = z.number().int().min(1, 'Use um dia de 1 a 31.').max(31, 'Use um dia de 1 a 31.');
+const DAY_MESSAGE = 'Use um dia de 1 a 31.';
+const Day = z
+  .number({ error: DAY_MESSAGE })
+  .int(DAY_MESSAGE)
+  .min(1, DAY_MESSAGE)
+  .max(31, DAY_MESSAGE);
 
 export const AccountCreate = z.discriminatedUnion('type', [
   z.object({

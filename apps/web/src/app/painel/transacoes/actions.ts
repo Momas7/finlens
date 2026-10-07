@@ -1,6 +1,7 @@
 'use server';
 
 import { Transaction } from '@finlens/contracts';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { apiFetch, apiSend, UnauthorizedError } from '@/lib/api';
 import { parseId } from '@/lib/ids';
@@ -54,6 +55,8 @@ export async function saveTransaction(_prev: FormState, form: FormData): Promise
     );
     return { fieldErrors, formError: result.error.fields ? undefined : result.error.message };
   }
+  // O contador de revisão fica no layout.
+  revalidatePath('/painel', 'layout');
   redirect('/painel/transacoes');
 }
 
@@ -61,6 +64,7 @@ export async function deleteTransaction(rawId: string): Promise<void> {
   const id = parseId(rawId);
   if (!id) redirect('/painel/transacoes');
   await guard(() => apiSend('DELETE', `/v1/transactions/${id}`));
+  revalidatePath('/painel', 'layout');
   redirect('/painel/transacoes');
 }
 

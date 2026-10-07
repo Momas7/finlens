@@ -1,6 +1,8 @@
+import { Review } from '@finlens/contracts';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { apiFetch } from '@/lib/api';
 import { getMe } from '@/lib/me';
 import { PainelNav } from './nav';
 import { SignOutButton } from './sign-out-button';
@@ -8,7 +10,7 @@ import { SignOutButton } from './sign-out-button';
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
 
 export default async function PainelLayout({ children }: { children: ReactNode }) {
-  const me = await getMe();
+  const [me, review] = await Promise.all([getMe(), apiFetch('/v1/review', Review)]);
   const formatted = monthFormatter.format(new Date());
   const month = formatted.charAt(0).toUpperCase() + formatted.slice(1);
   return (
@@ -27,7 +29,7 @@ export default async function PainelLayout({ children }: { children: ReactNode }
         </div>
       </header>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10 lg:py-8">
-        <PainelNav />
+        <PainelNav reviewCount={review.counts.needsYou} />
         <main className="min-w-0">{children}</main>
       </div>
     </div>

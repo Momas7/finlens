@@ -5,6 +5,7 @@ import { Scale } from '@/components/ui/scale';
 import { apiFetch } from '@/lib/api';
 import { type CategoryOption, categoryLabels, categoryOptions } from '@/lib/categories';
 import { formatCents } from '@/lib/money';
+import { groupHeadingId } from '@/lib/review';
 import { GroupForm } from './group-form';
 import { RuleSuggestionItem } from './rule-suggestion';
 
@@ -15,17 +16,19 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 });
 
 function GroupItem({
+  section,
   group,
   labels,
   groups,
 }: {
+  section: string;
   group: ReviewGroup;
   labels: Map<string, string>;
   groups: { group: string; options: CategoryOption[] }[];
 }) {
   const percent = group.confidence === null ? null : Math.round(group.confidence * 100);
   const suggested = group.suggestedCategoryId && labels.get(group.suggestedCategoryId);
-  const headingId = `group-${group.key.replace(/[^a-zA-Z0-9]/g, '-')}`;
+  const headingId = groupHeadingId(section, group.key);
   return (
     <li aria-labelledby={headingId} className="space-y-3 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -90,7 +93,7 @@ function GroupSection({
       <p className="mt-1 text-[13px] text-ink-soft">{hint}</p>
       <ul className="divide-y divide-scale">
         {list.map((g) => (
-          <GroupItem key={g.key} group={g} labels={labels} groups={groups} />
+          <GroupItem key={g.key} section={id} group={g} labels={labels} groups={groups} />
         ))}
       </ul>
     </Panel>

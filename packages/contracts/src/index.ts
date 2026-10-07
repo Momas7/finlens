@@ -4,5 +4,6 @@ export * from './classification';
 export * from './errors';
 export * from './me';
 export * from './money';
+export * from './review';
 export * from './rules';
 export * from './transactions';

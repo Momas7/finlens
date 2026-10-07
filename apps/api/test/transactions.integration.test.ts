@@ -232,6 +232,9 @@ describe('/v1/categories e /v1/transactions', () => {
         description: 'antes',
       })
     ).json().id;
+    const one = await ana({ method: 'GET', url: `/v1/transactions/${id}` });
+    expect(one.json()).toMatchObject({ id, description: 'antes' });
+    expect((await bia({ method: 'GET', url: `/v1/transactions/${id}` })).statusCode).toBe(404);
     const patch = await ana({
       method: 'PATCH',
       url: `/v1/transactions/${id}`,

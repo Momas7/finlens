@@ -41,6 +41,13 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
     return withTenant(opts.db, request.tenant, (tx) => listTransactions(tx, query));
   });
 
+  app.get('/v1/transactions/:id', auth, async (request) => {
+    const id = transactionId(request);
+    const row = await withTenant(opts.db, request.tenant, (tx) => findTransaction(tx, id));
+    if (!row) throw notFound('Lançamento');
+    return toTransactionDto(row);
+  });
+
   app.post('/v1/transactions', auth, async (request, reply) => {
     const input = TransactionCreate.parse(request.body);
     const created = await withTenant(opts.db, request.tenant, async (tx) => {

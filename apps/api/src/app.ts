@@ -5,6 +5,8 @@ import type { Db } from '@finlens/db';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { createAuth } from './auth';
 import type { Config } from './config';
+import { registerErrorHandler } from './http/errors';
+import { accountRoutes } from './modules/accounts/routes';
 import { healthRoutes } from './modules/health/routes';
 import { meRoutes } from './modules/me/routes';
 import { authRoutes } from './plugins/auth-routes';
@@ -38,11 +40,14 @@ export async function buildApp(deps: {
   await app.register(cors, { origin: config.webOrigin, credentials: true });
   await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
 
+  registerErrorHandler(app);
+
   const auth = createAuth(db, config, app.log);
   await app.register(tenantPlugin, { auth, db });
   await app.register(healthRoutes, { db });
   await app.register(authRoutes, { auth, config });
   await app.register(meRoutes, { db });
+  await app.register(accountRoutes, { db });
 
   return app;
 }

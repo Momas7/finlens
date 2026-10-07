@@ -4,9 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
 
 export default function LoginPage() {
@@ -32,43 +30,38 @@ export default function LoginPage() {
       );
       return;
     }
-    router.replace('/');
+    router.replace('/painel');
     router.refresh();
   }
 
   return (
-    <Card>
-      <h1 className="mb-4 text-lg font-semibold">Entrar</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
+    <div>
+      <h1 className="text-[24px] font-semibold tracking-tight">Entrar</h1>
+      <p className="mt-1 text-ink-soft">Continue de onde parou.</p>
+      <form onSubmit={onSubmit} className="mt-8 space-y-5">
+        <Field label="E-mail" name="email" type="email" autoComplete="email" required />
+        <Field
+          label="Senha"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-[13px] text-mark">
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
           Entrar
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-[13px] text-ink-soft">
         Ainda não tem conta?{' '}
-        <Link href="/signup" className="font-medium text-foreground underline">
+        <Link href="/signup" className="font-medium text-ink underline underline-offset-4">
           Criar conta
         </Link>
       </p>
-    </Card>
+    </div>
   );
 }

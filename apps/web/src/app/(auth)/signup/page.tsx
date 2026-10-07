@@ -4,9 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
 
 export default function SignupPage() {
@@ -29,49 +27,41 @@ export default function SignupPage() {
       setError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
       return;
     }
-    router.replace('/');
+    router.replace('/painel');
     router.refresh();
   }
 
   return (
-    <Card>
-      <h1 className="mb-4 text-lg font-semibold">Criar conta</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome</Label>
-          <Input id="name" name="name" autoComplete="name" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={10}
-            required
-          />
-          <p className="text-xs text-muted-foreground">Mínimo de 10 caracteres.</p>
-        </div>
+    <div>
+      <h1 className="text-[24px] font-semibold tracking-tight">Criar conta</h1>
+      <p className="mt-1 text-ink-soft">Seus dados ficam na sua própria instância.</p>
+      <form onSubmit={onSubmit} className="mt-8 space-y-5">
+        <Field label="Nome" name="name" autoComplete="name" required />
+        <Field label="E-mail" name="email" type="email" autoComplete="email" required />
+        <Field
+          label="Senha"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={10}
+          hint="Mínimo de 10 caracteres."
+          required
+        />
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-[13px] text-mark">
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
           Criar conta
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-[13px] text-ink-soft">
         Já tem conta?{' '}
-        <Link href="/login" className="font-medium text-foreground underline">
+        <Link href="/login" className="font-medium text-ink underline underline-offset-4">
           Entrar
         </Link>
       </p>
-    </Card>
+    </div>
   );
 }

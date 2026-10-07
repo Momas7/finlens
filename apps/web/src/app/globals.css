@@ -1,41 +1,98 @@
 @import "tailwindcss";
 
+/* Fita métrica — ver docs/superpowers/specs/2026-10-07-identidade-visual-design.md */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --border: #e4e4e7;
-  --danger: #b91c1c;
+  --page: #eceff1;
+  --raised: #f8f9fa;
+  --ink: #15191d;
+  --ink-soft: #56616b;
+  --scale: #b7c0c7;
+  --tape: #f2c230;
+  --on-tape: #2b2205;
+  --mark: #b83325;
+  --gain: #2e7d6b;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --page: #1a1f24;
+  --raised: #22282e;
+  --ink: #e6eaed;
+  --ink-soft: #9aa4ac;
+  --scale: #3a434b;
+  --mark: #f0705f;
+  --gain: #5fc2a8;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #111113;
-    --muted: #1c1c1f;
-    --muted-foreground: #a1a1aa;
-    --border: #27272a;
-    --danger: #f87171;
+  :root:not([data-theme="light"]) {
+    --page: #1a1f24;
+    --raised: #22282e;
+    --ink: #e6eaed;
+    --ink-soft: #9aa4ac;
+    --scale: #3a434b;
+    --mark: #f0705f;
+    --gain: #5fc2a8;
+    color-scheme: dark;
   }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-page: var(--page);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-scale: var(--scale);
+  --color-tape: var(--tape);
+  --color-on-tape: var(--on-tape);
+  --color-mark: var(--mark);
+  --color-gain: var(--gain);
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Números de destaque: condensados, tabulares. */
+.figure {
+  font-stretch: 80%;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* Único movimento da interface: a régua mede da esquerda para a direita. */
+@keyframes measure {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.scale-measure {
+  transform-origin: left center;
+  animation: measure 400ms ease-out both;
+  animation-delay: var(--measure-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion precisa vencer qualquer animação */
+    animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: idem */
+    transition: none !important;
+  }
 }

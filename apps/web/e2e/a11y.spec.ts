@@ -32,6 +32,7 @@ for (const theme of ['light', 'dark'] as const) {
         '/painel/contas/nova',
         '/painel/transacoes',
         '/painel/transacoes/nova',
+        '/painel/categorias',
       ]) {
         await page.goto(path);
         expect(await seriousViolations(page), path).toEqual([]);

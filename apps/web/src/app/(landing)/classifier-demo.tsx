@@ -39,7 +39,7 @@ export function ClassifierDemo() {
         <h2 id="demo-title" className="font-medium">
           Extrato importado
         </h2>
-        <p className="text-[13px] text-ink-soft">Confiança da classificação</p>
+        <p className="text-right text-[13px] text-ink-soft">Confiança</p>
       </div>
       <ul>
         {ROWS.map((row, i) => {
@@ -52,9 +52,12 @@ export function ClassifierDemo() {
             >
               <div className="min-w-0">
                 <p className="truncate text-[13px] text-ink-soft">{row.raw}</p>
-                <p className="truncate font-medium">
+                <p className="font-medium">
                   {row.merchant}
-                  <span className="font-normal text-ink-soft"> em {row.category}</span>
+                  <span className="block font-normal text-ink-soft sm:inline">
+                    <span className="hidden sm:inline"> em </span>
+                    {row.category}
+                  </span>
                 </p>
                 {review && <p className="text-[13px] text-ink">Pede sua confirmação</p>}
               </div>

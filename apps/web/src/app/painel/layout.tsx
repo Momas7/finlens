@@ -8,13 +8,14 @@ const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: '
 
 export default async function PainelLayout({ children }: { children: ReactNode }) {
   const me = await getMe();
-  const month = monthFormatter.format(new Date());
+  const formatted = monthFormatter.format(new Date());
+  const month = formatted.charAt(0).toUpperCase() + formatted.slice(1);
   return (
     <div className="min-h-dvh">
       <header className="border-b border-scale bg-raised">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
           <Logo size="sm" />
-          <span className="hidden text-[13px] text-ink-soft capitalize sm:inline">{month}</span>
+          <span className="hidden text-[13px] text-ink-soft sm:inline">{month}</span>
           <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-3">
             <ThemeToggle />
             <span className="min-w-0 truncate text-[13px] text-ink-soft">

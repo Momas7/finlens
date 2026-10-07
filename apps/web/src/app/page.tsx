@@ -26,7 +26,8 @@ export default function HomePage() {
               className="text-[32px] leading-[1.05] font-semibold tracking-tight text-balance sm:text-[48px]"
               style={{ fontStretch: '82%' }}
             >
-              Importe o extrato. O Finlens mede para onde vai seu dinheiro.
+              <span className="block">Importe o extrato. </span>
+              <span className="block">O Finlens mede para onde vai seu dinheiro.</span>
             </h1>
             <p className="mt-5 max-w-[60ch] text-[18px] text-ink-soft">
               Ele reconhece cada compra, separa por categoria e aponta onde o gasto saiu do padrão,
@@ -71,13 +72,22 @@ export default function HomePage() {
                   Mudou uma compra da Amazon de Compras para Casa? As próximas parecidas, em valor e
                   descrição, seguem a sua correção.
                 </p>
+                <div className="mt-5 rounded-[6px] border border-scale bg-page px-4 py-3">
+                  <p className="text-[13px] text-ink-soft">AMAZON BR, R$ 349,90</p>
+                  <p className="mt-0.5">
+                    <del className="text-ink-soft">Compras</del> <span aria-hidden="true">›</span>{' '}
+                    <ins className="font-medium no-underline">Casa</ins>
+                  </p>
+                </div>
               </article>
               <article>
                 <h3 className="text-[18px] font-semibold">Mostra o problema e o impacto</h3>
                 <p className="mt-2 text-ink-soft">
-                  Delivery e Uber somam R$ 1.000 por mês. Reduzir 20% nessas categorias libera R$
-                  200 por mês para a sua meta.
+                  Delivery e Uber somam R$&nbsp;1.000 por mês. Reduzir 20% nessas categorias libera
+                  R$&nbsp;200 por mês para a sua meta.
                 </p>
+                <p className="figure mt-5 text-[32px] text-gain">+R$&nbsp;200</p>
+                <p className="mt-1 text-[13px] text-ink-soft">liberados por mês</p>
               </article>
             </div>
           </div>

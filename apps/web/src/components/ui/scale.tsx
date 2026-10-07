@@ -26,15 +26,7 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
       aria-valuetext={valueText}
       className={`relative h-4 w-full ${className}`}
     >
-      <div className="absolute inset-x-0 top-0 h-3 border-b border-scale" aria-hidden="true">
-        {g.tickPcts.map((pct, i) => (
-          <span
-            key={pct}
-            className={`absolute bottom-0 w-px bg-scale ${i % 5 === 0 ? 'h-3' : 'h-1.5'}`}
-            style={{ left: `${pct}%` }}
-          />
-        ))}
-      </div>
+      <div className="absolute inset-x-0 top-0 h-3 border-b border-scale" aria-hidden="true" />
       <div
         className="scale-measure absolute top-0 left-0 h-3"
         style={{ width: `${g.filledPct + g.overPct}%` }}
@@ -50,6 +42,15 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
             style={{ width: `${(g.overPct / (g.filledPct + g.overPct)) * 100}%` }}
           />
         )}
+      </div>
+      <div className="absolute inset-x-0 top-0 h-3" aria-hidden="true">
+        {g.tickPcts.map((pct, i) => (
+          <span
+            key={pct}
+            className={`absolute bottom-0 w-px bg-scale ${i % 5 === 0 ? 'h-3' : 'h-1.5'}`}
+            style={{ left: `${pct}%` }}
+          />
+        ))}
       </div>
       {g.limitPct !== null && (
         <span

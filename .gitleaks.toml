@@ -1,0 +1,8 @@
+# Regras padrão do gitleaks + allowlist de valores fictícios usados em testes e docs.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Senhas fictícias de teste"
+regexTarget = "secret"
+regexes = ['''^senha-forte-123$''']

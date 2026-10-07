@@ -26,3 +26,12 @@ test('senha errada mostra erro', async ({ page }) => {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByRole('main').getByRole('alert')).toHaveText('E-mail ou senha inválidos.');
 });
+
+test('cookie de sessão inválido leva ao login sem loop de redirect', async ({ page, context }) => {
+  await context.addCookies([
+    { name: 'better-auth.session_token', value: 'sessao-invalida', url: 'http://localhost:3000' },
+  ]);
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
+});

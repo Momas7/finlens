@@ -9,7 +9,7 @@ export const getMe = cache(async (): Promise<MeResponse> => {
   try {
     return await apiFetch('/v1/me', MeResponse);
   } catch (err) {
-    if (err instanceof UnauthorizedError) redirect('/login');
+    if (err instanceof UnauthorizedError) redirect('/auth/clear-session');
     throw err;
   }
 });

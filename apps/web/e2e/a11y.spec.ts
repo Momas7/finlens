@@ -15,7 +15,7 @@ for (const theme of ['light', 'dark'] as const) {
       await page.addInitScript((t) => window.localStorage.setItem('finlens-theme', t), theme);
     });
 
-    for (const path of ['/login', '/signup']) {
+    for (const path of ['/', '/login', '/signup']) {
       test(path, async ({ page }) => {
         await page.goto(path);
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);

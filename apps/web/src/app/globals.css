@@ -83,6 +83,7 @@ body {
 .scale-measure {
   transform-origin: left center;
   animation: measure 400ms ease-out both;
+  animation-delay: var(--measure-delay, 0ms);
 }
 
 @media (prefers-reduced-motion: reduce) {

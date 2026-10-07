@@ -200,7 +200,7 @@ describe('/v1/categories e /v1/transactions', () => {
       const seen: { id: string; postedDate: string }[] = [];
       let cursor: string | null = null;
       do {
-        const page = (
+        const page: { items: { id: string; postedDate: string }[]; nextCursor: string | null } = (
           await who({ method: 'GET', url: `/v1/transactions${cursor ? `?cursor=${cursor}` : ''}` })
         ).json();
         expect(page.items.length).toBeLessThanOrEqual(50);

@@ -87,6 +87,25 @@ describe('combine', () => {
   });
 });
 
+describe('evidência pessoal e dicionário', () => {
+  it('evidência pessoal fraca que concorda reforça em vez de derrubar', () => {
+    const r = combine([
+      cand('farm', 0.283, 'similar', { neighbors: 1 }),
+      cand('farm', 0.8, 'keyword'),
+    ]);
+    expect(r.category).toBe('farm');
+    expect(r.confidence).toBeCloseTo(1 - 0.717 * 0.2, 3);
+    expect(r.status).toBe('likely');
+  });
+  it('dicionário que discorda do histórico continua ignorado', () => {
+    const r = combine([
+      cand('rest', 0.75, 'history', { count: 1 }),
+      cand('deliv', 0.9, 'merchant'),
+    ]);
+    expect(r).toMatchObject({ category: 'rest', confidence: 0.75 });
+  });
+});
+
 describe('statusFor', () => {
   it('limiares', () => {
     expect(statusFor(0.9)).toBe('auto');

@@ -25,6 +25,11 @@ export default async function EditarTransacaoPage({
         groups={categoryOptions(tree)}
         today={todayInSaoPaulo()}
         transaction={transaction}
+        currentCategoryLabel={
+          transaction.categoryId
+            ? (categoryLabels(tree).get(transaction.categoryId) ?? 'Categoria arquivada')
+            : undefined
+        }
       />
       <WhyPanel
         transaction={transaction}

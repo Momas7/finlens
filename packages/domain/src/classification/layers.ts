@@ -51,9 +51,11 @@ export function ruleMatches(
   },
 ): Rule | null {
   const amount = abs(ctx.amountCents);
+  // Palavra inteira: uma regra "BAR" não pode decidir "BARBEARIA".
+  const padded = ` ${ctx.normalized} `;
   const matching = rules.filter(
     (r) =>
-      (ctx.normalized.includes(r.pattern) || ctx.merchantKey === r.pattern) &&
+      padded.includes(` ${r.pattern} `) &&
       (r.minAmountCents === null || amount >= r.minAmountCents) &&
       (r.maxAmountCents === null || amount <= r.maxAmountCents) &&
       (r.accountId === null || r.accountId === ctx.accountId),

@@ -39,7 +39,7 @@ descrição ─► normalize() ─► { normalized, tokens, gateway, installment
 
 | Camada | Fonte | Confiança |
 |---|---|---|
-| L1 | Regra do usuário que casa (texto contido em `normalized` ou `merchantKey`, faixa de valor e conta opcionais). Maior prioridade, depois a mais recente. | 0,99 |
+| L1 | Regra do usuário que casa (padrão como palavras inteiras em `normalized`, faixa de valor e conta opcionais). Maior prioridade, depois a mais recente. | 0,99 |
 | L2 | Histórico de lançamentos `confirmed` com o mesmo `merchantKey` (ou o mesmo `normalized`, sem estabelecimento) | posterior abaixo |
 | L3 | Até 10 lançamentos `confirmed` com `similarity(description_normalized) > 0,45` | voto ponderado, teto 0,85 |
 | L4 | Dicionário de estabelecimentos | 0,90 |
@@ -61,7 +61,8 @@ P(c | m, b) = (n_c,b + P(c | m)) / (n_b + 1)
 ## Combinação (`combine`)
 
 1. L1 casou: decide sozinha.
-2. Se L2 ou L3 têm candidatos, L4 e L5 são ignorados: o histórico do usuário vale mais que o dicionário global.
+2. Se L2 ou L3 têm candidatos, L4 e L5 só entram quando apontam para uma categoria que o histórico também aponta (reforçam); os que discordam são ignorados — o histórico do usuário vale mais que o dicionário global.
+0. Antes de combinar, descarta candidatos cujo tipo de categoria não combina com o sinal do valor: saída só aceita despesa, entrada só aceita receita; movimentação vale para os dois.
 3. Entre as camadas restantes, candidatos da mesma categoria se reforçam por noisy-OR: `1 − Π(1 − cᵢ)`, com teto 0,99.
 4. Conflito: se a segunda categoria tem confiança ≥ 0,80 vinda de outra camada, a confiança final é `min(melhor, 0,69)`.
 5. Status: ≥ 0,90 `auto` (aplica); ≥ 0,70 `likely` (aplica, marcado como provável); < 0,70 `suggested` (não aplica; guarda a sugestão); sem candidatos: `none`.

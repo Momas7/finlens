@@ -4,28 +4,28 @@
 
 ## Resumo
 
-- Aplicados automaticamente: **77,4%**, com precisão de **98,7%**.
-- Prováveis (aplicados e marcados): 17,3%, precisão de 96,2%.
-- Só sugeridos ou sem sugestão: 5,3%.
-- Acerto nas primeiras 100 contra as últimas 100: 90,0% → 98,0%.
+- Aplicados automaticamente: **85,4%**, com precisão de **99,6%**.
+- Prováveis (aplicados e marcados): 5,6%, precisão de 94,1%.
+- Só sugeridos ou sem sugestão: 9,0%.
+- Acerto nas primeiras 100 contra as últimas 100: 90,0% → 99,0%.
 
 ## Por status
 
 | Status | Lançamentos | Parte |
 |---|---|---|
-| Automático (≥ 0,90) | 233 | 77,4% |
-| Provável (0,70–0,90) | 52 | 17,3% |
-| Sugestão (< 0,70) | 8 | 2,7% |
+| Automático (≥ 0,90) | 257 | 85,4% |
+| Provável (0,70–0,90) | 17 | 5,6% |
+| Sugestão (< 0,70) | 19 | 6,3% |
 | Sem sugestão | 8 | 2,7% |
 
 ## Precisão por fonte (automáticos e prováveis)
 
 | Fonte | Lançamentos | Precisão |
 |---|---|---|
-| history | 245 | 99,2% |
-| merchant | 24 | 95,8% |
-| similar | 9 | 77,8% |
-| keyword | 7 | 100,0% |
+| history | 178 | 99,4% |
+| merchant | 76 | 98,7% |
+| keyword | 15 | 100,0% |
+| similar | 5 | 100,0% |
 
 ## Calibração
 
@@ -33,7 +33,7 @@ Confiança prometida contra acerto real.
 
 | Confiança | Lançamentos | Acerto |
 |---|---|---|
-| 0,70–0,80 | 8 | 100,0% |
-| 0,80–0,90 | 44 | 95,5% |
-| 0,90–0,95 | 38 | 92,1% |
-| 0,95–1,00 | 195 | 100,0% |
+| 0,70–0,80 | 4 | 100,0% |
+| 0,80–0,90 | 13 | 92,3% |
+| 0,90–0,95 | 23 | 95,7% |
+| 0,95–1,00 | 234 | 100,0% |

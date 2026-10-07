@@ -5,7 +5,13 @@ import { and, desc, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 const NEIGHBOR_THRESHOLD = 0.45;
 const NEIGHBOR_LIMIT = 10;
 
-export type ActiveCategory = { id: string; name: string; label: string; systemKey: string | null };
+export type ActiveCategory = {
+  id: string;
+  name: string;
+  label: string;
+  systemKey: string | null;
+  kind: 'expense' | 'income' | 'movement';
+};
 
 /** Categorias ativas do workspace, com rótulo "Raiz › Filha". */
 export async function activeCategories(tx: Tx): Promise<Map<string, ActiveCategory>> {
@@ -15,6 +21,7 @@ export async function activeCategories(tx: Tx): Promise<Map<string, ActiveCatego
       name: categories.name,
       parentId: categories.parentId,
       systemKey: categories.systemKey,
+      kind: categories.kind,
     })
     .from(categories)
     .where(isNull(categories.archivedAt));
@@ -29,6 +36,7 @@ export async function activeCategories(tx: Tx): Promise<Map<string, ActiveCatego
       name: r.name,
       label: parent ? `${parent.name} › ${r.name}` : r.name,
       systemKey: r.systemKey,
+      kind: r.kind,
     });
   }
   return result;
@@ -50,7 +58,9 @@ export async function loadEvidence(
     for (const c of active.values()) if (c.systemKey === key) return { id: c.id, name: c.name };
     return null;
   };
-  if (ctx.normalized === '') return { rules: [], history: [], neighbors: [], resolveSystemKey };
+  const kindOf = (id: string) => active.get(id)?.kind ?? null;
+  if (ctx.normalized === '')
+    return { rules: [], history: [], neighbors: [], resolveSystemKey, kindOf };
 
   const confirmed = and(
     eq(transactions.classificationStatus, 'confirmed'),
@@ -58,6 +68,10 @@ export async function loadEvidence(
     ctx.excludeTransactionId ? ne(transactions.id, ctx.excludeTransactionId) : undefined,
   );
 
+  // O operador % usa o índice trigram; o limiar vale só nesta transação.
+  await tx.execute(
+    sql`select set_config('pg_trgm.similarity_threshold', ${String(NEIGHBOR_THRESHOLD)}, true)`,
+  );
   const [ruleRows, historyRows, neighborRows] = await Promise.all([
     tx
       .select()
@@ -92,7 +106,7 @@ export async function loadEvidence(
         and(
           confirmed,
           ne(transactions.descriptionNormalized, ''),
-          sql`similarity(${transactions.descriptionNormalized}, ${ctx.normalized}) > ${NEIGHBOR_THRESHOLD}`,
+          sql`${transactions.descriptionNormalized} % ${ctx.normalized}`,
         ),
       )
       .orderBy(desc(sql`similarity(${transactions.descriptionNormalized}, ${ctx.normalized})`))
@@ -128,5 +142,5 @@ export async function loadEvidence(
       similarity: Number(r.similarity),
     }));
 
-  return { rules, history, neighbors, resolveSystemKey };
+  return { rules, history, neighbors, resolveSystemKey, kindOf };
 }

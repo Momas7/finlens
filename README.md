@@ -6,7 +6,7 @@ Não é um CRUD de despesas. O foco é um pipeline de classificação híbrido e
 
 > **Status:** contas, lançamentos e classificação automática prontos (F0, F1a e F2a). Veja o [roadmap](docs/architecture.md#11-roadmap).
 
-**Classificador:** em um dataset sintético de 301 lançamentos, 77% são categorizados sozinhos com 98,7% de precisão — [relatório completo](docs/classifier-eval.md), regenerado e verificado no CI.
+**Classificador:** em um dataset sintético de 301 lançamentos, 85% são categorizados sozinhos com 99,6% de precisão — [relatório completo](docs/classifier-eval.md), regenerado e verificado no CI.
 
 ## Stack
 

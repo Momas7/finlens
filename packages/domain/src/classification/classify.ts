@@ -1,3 +1,4 @@
+import type { CategoryKind } from '../categories/default-categories';
 import { combine, type Status } from './combine';
 import { matchKeyword } from './keywords';
 import {
@@ -22,7 +23,15 @@ export type Evidence = {
   neighbors: Neighbor[];
   /** Categoria ativa do workspace para uma system_key; null se arquivada ou inexistente. */
   resolveSystemKey(key: string): { id: string; name: string } | null;
+  /** Tipo da categoria (despesa, receita, movimentação); null se desconhecida. */
+  kindOf(categoryId: string): CategoryKind | null;
 };
+
+/** Saída só aceita despesa; entrada só aceita receita; movimentação vale para os dois. */
+function kindFits(kind: CategoryKind | null, amountCents: bigint): boolean {
+  if (kind === null || kind === 'movement') return true;
+  return kind === (amountCents < 0n ? 'expense' : 'income');
+}
 
 export type Classification = {
   category: string | null;
@@ -100,5 +109,8 @@ export function classify(
     }
   }
 
-  return { ...combine(candidates), ...base };
+  const fitting = candidates.filter((c) =>
+    kindFits(evidence.kindOf(c.category), input.amountCents),
+  );
+  return { ...combine(fitting), ...base };
 }

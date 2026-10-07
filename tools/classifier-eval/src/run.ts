@@ -3,6 +3,7 @@ import {
   amountBucket,
   type Classification,
   classify,
+  DEFAULT_CATEGORIES,
   type Evidence,
   type HistoryRow,
   matchMerchant,
@@ -12,6 +13,8 @@ import {
   trigramSimilarity,
 } from '@finlens/domain';
 import type { Sample } from './dataset';
+
+const KIND = new Map(DEFAULT_CATEGORIES.map((c) => [c.key, c.kind]));
 
 type Confirmed = { key: string; bucket: AmountBucket; category: string; normalized: string };
 
@@ -68,6 +71,7 @@ function evidenceFor(description: string, confirmed: Confirmed[]): Evidence {
     history: [...counts.values()],
     neighbors,
     resolveSystemKey: (k) => ({ id: k, name: k }),
+    kindOf: (id) => KIND.get(id) ?? null,
   };
 }
 

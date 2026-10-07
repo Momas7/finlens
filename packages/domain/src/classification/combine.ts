@@ -37,7 +37,7 @@ const NONE: Combined = {
 /**
  * Junta os candidatos das camadas:
  * 1. regra decide sozinha;
- * 2. havendo histórico/similares do usuário, dicionário e palavra-chave são ignorados;
+ * 2. havendo histórico/similares do usuário, dicionário e palavra-chave que discordam são ignorados;
  * 3. candidatos da mesma categoria se reforçam (noisy-OR, teto 0,99);
  * 4. outra camada apontando outra categoria com ≥ 0,80 derruba para 0,69.
  */
@@ -53,8 +53,15 @@ export function combine(candidates: Candidate[]): Combined {
     };
   }
 
+  // Havendo evidência do próprio usuário, dicionário e palavra-chave só entram se concordarem
+  // com ela: discordando, valem menos que o histórico; concordando, reforçam a confiança.
   const personal = candidates.filter((c) => c.source === 'history' || c.source === 'similar');
-  const pool = (personal.length > 0 ? personal : candidates).filter((c) => c.confidence > 0);
+  const personalCategories = new Set(personal.map((c) => c.category));
+  const pool = (
+    personal.length > 0
+      ? candidates.filter((c) => personal.includes(c) || personalCategories.has(c.category))
+      : candidates
+  ).filter((c) => c.confidence > 0);
   if (pool.length === 0) return NONE;
 
   const groups = new Map<string, Candidate[]>();

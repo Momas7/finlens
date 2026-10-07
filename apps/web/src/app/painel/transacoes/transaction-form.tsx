@@ -22,11 +22,14 @@ export function TransactionForm({
   groups,
   today,
   transaction,
+  currentCategoryLabel,
 }: {
   accounts: Account[];
   groups: { group: string; options: CategoryOption[] }[];
   today: string;
   transaction?: Transaction;
+  /** Rótulo da categoria atual do lançamento, mesmo arquivada ou fora das opções. */
+  currentCategoryLabel?: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveTransaction, {});
   const [kind, setKind] = useState<Kind>(
@@ -57,6 +60,14 @@ export function TransactionForm({
       options: g.options.filter((o) => o.kind === kind || o.kind === 'movement'),
     }))
     .filter((g) => g.options.length > 0);
+  // Categoria confirmada que não está entre as opções (arquivada, raiz que ganhou filhas ou de
+  // outro tipo) continua selecionável; sem isso o navegador escolheria "Automática" em silêncio.
+  const confirmedId =
+    transaction?.classificationStatus === 'confirmed' ? transaction.categoryId : null;
+  const missingCurrent =
+    confirmedId && !visible.some((g) => g.options.some((o) => o.id === confirmedId))
+      ? confirmedId
+      : null;
 
   return (
     <form action={action} onSubmit={submitKeepingValues} className="max-w-xl space-y-5" noValidate>
@@ -138,6 +149,11 @@ export function TransactionForm({
         >
           <option value="auto">Automática</option>
           <option value="">Sem categoria</option>
+          {missingCurrent && (
+            <option value={missingCurrent}>
+              {currentCategoryLabel ?? 'Categoria atual'} (atual)
+            </option>
+          )}
           {visible.map((g) => (
             <optgroup key={g.group} label={g.group}>
               {g.options.map((o) => (

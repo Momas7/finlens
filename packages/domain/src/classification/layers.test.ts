@@ -73,6 +73,11 @@ describe('ruleMatches', () => {
     expect(ruleMatches([rule('C&A')], ctx('C&A MODAS'))?.id).toBe('C&A');
     expect(ruleMatches([rule('A.B')], ctx('AXB'))).toBeNull();
   });
+  it('casa por palavra inteira', () => {
+    expect(ruleMatches([rule('BAR')], ctx('BARBEARIA DO ZE'))).toBeNull();
+    expect(ruleMatches([rule('BAR')], ctx('BAR DO ZE'))?.id).toBe('BAR');
+    expect(ruleMatches([rule('SP')], ctx('SPOTIFY'))).toBeNull();
+  });
   it('faixa de valor (absoluto) e conta', () => {
     const r = rule('LOJA', { minAmountCents: 5000n, maxAmountCents: 10000n, accountId: 'acc' });
     expect(ruleMatches([r], ctx('LOJA', -7000n, 'acc'))).not.toBeNull();

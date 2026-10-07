@@ -1,6 +1,6 @@
 import { createDb, type Db } from '@finlens/db';
 import { createTestDatabase } from '@finlens/db/testing';
-import type { FastifyInstance, InjectOptions } from 'fastify';
+import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
 import { buildApp } from '../src/app';
 import { loadConfig } from '../src/config';
 
@@ -9,7 +9,7 @@ export type TestApp = {
   db: Db;
   ownerDb: Db;
   signUp(email?: string): Promise<{ cookie: string; userId: string }>;
-  as(cookie: string): (opts: InjectOptions) => ReturnType<FastifyInstance['inject']>;
+  as(cookie: string): (opts: InjectOptions) => Promise<LightMyRequestResponse>;
   close(): Promise<void>;
 };
 

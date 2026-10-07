@@ -2,10 +2,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Auth } from '../auth';
 import type { Config } from '../config';
 
-const STRICT_LIMIT = { rateLimit: { max: 10, timeWindow: '1 minute' } };
-
 /** Encaminha /api/auth/* para o handler Fetch do Better Auth. */
 export async function authRoutes(app: FastifyInstance, opts: { auth: Auth; config: Config }) {
+  const STRICT_LIMIT = {
+    rateLimit: { max: opts.config.authRateLimitPerMinute, timeWindow: '1 minute' },
+  };
   const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     const url = new URL(request.url, opts.config.betterAuthUrl);
     const headers = new Headers();

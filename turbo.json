@@ -23,7 +23,8 @@
         "PORT",
         "LOG_LEVEL",
         "NODE_ENV",
-        "CI"
+        "CI",
+        "AUTH_RATE_LIMIT_PER_MINUTE"
       ]
     },
     "test:e2e": {
@@ -39,7 +40,8 @@
         "PORT",
         "LOG_LEVEL",
         "NODE_ENV",
-        "CI"
+        "CI",
+        "AUTH_RATE_LIMIT_PER_MINUTE"
       ]
     },
     "dev": {
@@ -56,7 +58,8 @@
         "PORT",
         "LOG_LEVEL",
         "NODE_ENV",
-        "CI"
+        "CI",
+        "AUTH_RATE_LIMIT_PER_MINUTE"
       ]
     }
   }

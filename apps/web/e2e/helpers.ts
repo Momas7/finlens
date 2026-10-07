@@ -16,3 +16,14 @@ export async function signUp(page: Page, name = 'Ana', email = uniqueEmail()) {
   await expect(page).toHaveURL(/\/painel/);
   return email;
 }
+
+/** Cria uma conta corrente pela interface. */
+export async function createCheckingAccount(page: Page, name = 'Inter', balance = '1.500,00') {
+  await page.goto('/painel/contas/nova');
+  await page.getByLabel('Nome').fill(name);
+  await page.getByLabel('Tipo').selectOption('checking');
+  await page.getByLabel('Saldo inicial').fill(balance);
+  await page.getByLabel('Data do saldo').fill('2026-10-01');
+  await page.getByRole('button', { name: 'Salvar conta' }).click();
+  await expect(page).toHaveURL(/\/painel\/contas$/);
+}

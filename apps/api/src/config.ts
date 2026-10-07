@@ -8,6 +8,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3333),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
 });
 
 export type Config = {
@@ -18,6 +19,8 @@ export type Config = {
   port: number;
   logLevel: z.infer<typeof EnvSchema>['LOG_LEVEL'];
   isProduction: boolean;
+  /** Tentativas de login/cadastro por minuto por IP. */
+  authRateLimitPerMinute: number;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -35,5 +38,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     port: e.PORT,
     logLevel: e.LOG_LEVEL,
     isProduction: e.NODE_ENV === 'production',
+    authRateLimitPerMinute: e.AUTH_RATE_LIMIT_PER_MINUTE,
   };
 }

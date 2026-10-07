@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { seedDefaultCategories } from './categories';
 import type { Db } from './client';
 import { workspaceMembers, workspaces } from './schema';
 import { withTenant } from './tenant';
@@ -15,10 +16,11 @@ export async function ensurePersonalWorkspace(
   userId: string,
 ): Promise<{ id: string; name: string }> {
   return withTenant(db, { userId }, async (tx) => {
-    await tx
+    const created = await tx
       .insert(workspaces)
       .values({ name: PERSONAL_WORKSPACE_NAME, personalOwnerId: userId })
-      .onConflictDoNothing({ target: workspaces.personalOwnerId });
+      .onConflictDoNothing({ target: workspaces.personalOwnerId })
+      .returning({ id: workspaces.id });
 
     const [workspace] = await tx
       .select({ id: workspaces.id, name: workspaces.name })
@@ -30,6 +32,12 @@ export async function ensurePersonalWorkspace(
       .insert(workspaceMembers)
       .values({ workspaceId: workspace.id, userId, role: 'owner' })
       .onConflictDoNothing();
+
+    // Só quem criou o workspace semeia as categorias: chamadas concorrentes não duplicam.
+    if (created.length > 0) {
+      await tx.execute(sql`select set_config('app.workspace_id', ${workspace.id}, true)`);
+      await seedDefaultCategories(tx, workspace.id);
+    }
 
     return workspace;
   });

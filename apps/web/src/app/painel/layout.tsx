@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getMe } from '@/lib/me';
+import { PainelNav } from './nav';
 import { SignOutButton } from './sign-out-button';
 
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -25,7 +26,10 @@ export default async function PainelLayout({ children }: { children: ReactNode }
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10 lg:py-8">
+        <PainelNav />
+        <main className="min-w-0">{children}</main>
+      </div>
     </div>
   );
 }

@@ -22,6 +22,20 @@
       "when": 1791339800715,
       "tag": "0002_workspace_members_write_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791388616888,
+      "tag": "0003_ambiguous_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791388617834,
+      "tag": "0004_finance_rls",
+      "breakpoints": true
     }
   ]
 }

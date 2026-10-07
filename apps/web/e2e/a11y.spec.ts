@@ -27,6 +27,15 @@ for (const theme of ['light', 'dark'] as const) {
       await signUp(page);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page)).toEqual([]);
+      for (const path of [
+        '/painel/contas',
+        '/painel/contas/nova',
+        '/painel/transacoes',
+        '/painel/transacoes/nova',
+      ]) {
+        await page.goto(path);
+        expect(await seriousViolations(page), path).toEqual([]);
+      }
     });
   });
 }

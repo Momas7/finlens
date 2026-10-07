@@ -72,6 +72,12 @@ export async function findActiveAccount(tx: Tx, id: string): Promise<AccountRow 
   return row;
 }
 
+/** Conta do workspace, arquivada ou não. */
+export async function findAccount(tx: Tx, id: string): Promise<AccountRow | undefined> {
+  const [row] = await tx.select().from(financialAccounts).where(eq(financialAccounts.id, id));
+  return row;
+}
+
 export async function getAccount(tx: Tx, id: string): Promise<Account | undefined> {
   const row = await findActiveAccount(tx, id);
   return row ? (await enrich(tx, [row]))[0] : undefined;

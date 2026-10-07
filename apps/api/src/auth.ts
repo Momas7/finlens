@@ -4,6 +4,7 @@ import { hash, verify } from '@node-rs/argon2';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { FastifyBaseLogger } from 'fastify';
+import { betterAuthLogger } from './better-auth-logger';
 import type { Config } from './config';
 
 // Parâmetros argon2id recomendados pela OWASP (19 MiB, 2 iterações, paralelismo 1).
@@ -34,6 +35,8 @@ export function createAuth(db: Db, config: Config, log: FastifyBaseLogger) {
     // Rate limit é feito pelo Fastify, que conhece o IP real da requisição.
     rateLimit: { enabled: false },
     telemetry: { enabled: false },
+    // Logs do Better Auth vão para o pino (estrutura, redaction e serialização de erros).
+    logger: betterAuthLogger(log),
     advanced: { useSecureCookies: config.isProduction },
     databaseHooks: {
       user: {

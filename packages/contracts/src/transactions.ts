@@ -18,7 +18,9 @@ export const TransactionCreate = z.object({
 });
 export type TransactionCreate = z.infer<typeof TransactionCreate>;
 
-export const TransactionUpdate = TransactionCreate.partial().strict();
+export const TransactionUpdate = TransactionCreate.partial()
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, 'Informe ao menos um campo para alterar.');
 export type TransactionUpdate = z.infer<typeof TransactionUpdate>;
 
 export const Transaction = z.object({

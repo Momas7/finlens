@@ -1,9 +1,10 @@
-import { createDb } from '@finlens/db';
+import { assertAppRoleIsSafe, createDb } from '@finlens/db';
 import { buildApp } from './app';
 import { loadConfig } from './config';
 
 const config = loadConfig(process.env);
 const db = createDb(config.databaseUrl);
+await assertAppRoleIsSafe(db);
 const app = await buildApp({ config, db });
 
 const shutdown = async () => {

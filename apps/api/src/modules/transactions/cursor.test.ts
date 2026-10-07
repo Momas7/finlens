@@ -9,5 +9,6 @@ describe('cursor', () => {
   it('inválido', () => {
     expect(decodeCursor('@@@')).toBeNull();
     expect(decodeCursor(Buffer.from('2026-13-99|x').toString('base64url'))).toBeNull();
+    expect(decodeCursor(encodeCursor('2026-02-31', id))).toBeNull();
   });
 });

@@ -24,7 +24,8 @@
         "LOG_LEVEL",
         "NODE_ENV",
         "CI",
-        "AUTH_RATE_LIMIT_PER_MINUTE"
+        "AUTH_RATE_LIMIT_PER_MINUTE",
+        "TRUSTED_PROXIES"
       ]
     },
     "test:e2e": {
@@ -41,7 +42,8 @@
         "LOG_LEVEL",
         "NODE_ENV",
         "CI",
-        "AUTH_RATE_LIMIT_PER_MINUTE"
+        "AUTH_RATE_LIMIT_PER_MINUTE",
+        "TRUSTED_PROXIES"
       ]
     },
     "dev": {
@@ -59,7 +61,8 @@
         "LOG_LEVEL",
         "NODE_ENV",
         "CI",
-        "AUTH_RATE_LIMIT_PER_MINUTE"
+        "AUTH_RATE_LIMIT_PER_MINUTE",
+        "TRUSTED_PROXIES"
       ]
     }
   }

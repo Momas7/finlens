@@ -16,7 +16,14 @@ describe('loadConfig', () => {
       logLevel: 'info',
       isProduction: false,
       authRateLimitPerMinute: 10,
+      trustedProxies: [],
     });
+  });
+
+  it('proxies confiáveis só quando configurados', () => {
+    expect(
+      loadConfig({ ...validEnv, TRUSTED_PROXIES: '10.0.0.5, 127.0.0.1' }).trustedProxies,
+    ).toEqual(['10.0.0.5', '127.0.0.1']);
   });
 
   it('limite de autenticação configurável', () => {

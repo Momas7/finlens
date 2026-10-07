@@ -77,7 +77,8 @@ export function ClassifierDemo() {
         })}
       </ul>
       <p className="border-t border-scale bg-page/60 px-5 py-3 text-[13px] text-ink-soft">
-        {automatic} classificadas sozinhas, {ROWS.length - automatic} pede sua confirmação.
+        {automatic} classificadas sozinhas, {ROWS.length - automatic}{' '}
+        {ROWS.length - automatic === 1 ? 'pede' : 'pedem'} sua confirmação.
       </p>
     </Panel>
   );

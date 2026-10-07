@@ -10,6 +10,10 @@ export function decodeCursor(cursor: string): { postedDate: string; id: string }
   if (!/^[A-Za-z0-9_-]+$/.test(cursor)) return null;
   const [postedDate, id, extra] = Buffer.from(cursor, 'base64url').toString().split('|');
   if (extra !== undefined || !postedDate || !id) return null;
-  if (!DATE.test(postedDate) || Number.isNaN(Date.parse(postedDate)) || !UUID.test(id)) return null;
+  if (!DATE.test(postedDate) || !UUID.test(id)) return null;
+  // Date.parse aceita "2026-02-31"; a ida e volta pela data recusa dias inexistentes.
+  const parsed = new Date(`${postedDate}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== postedDate)
+    return null;
   return { postedDate, id };
 }

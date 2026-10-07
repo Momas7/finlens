@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Cents, IsoDate, Uuid } from './money';
+import { Cents, IsoDate, TotalCents, Uuid } from './money';
 
 export const AccountType = z.enum(['checking', 'savings', 'cash', 'credit_card']);
 export type AccountType = z.infer<typeof AccountType>;
@@ -42,7 +42,8 @@ export const AccountUpdate = z
     dueDay: Day,
   })
   .partial()
-  .strict();
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, 'Informe ao menos um campo para alterar.');
 export type AccountUpdate = z.infer<typeof AccountUpdate>;
 
 export const Account = z.object({
@@ -54,8 +55,8 @@ export const Account = z.object({
   openingBalanceDate: IsoDate.nullable(),
   closingDay: z.number().nullable(),
   dueDay: z.number().nullable(),
-  balanceCents: Cents.nullable(),
-  openInvoiceCents: Cents.nullable(),
+  balanceCents: TotalCents.nullable(),
+  openInvoiceCents: TotalCents.nullable(),
   currentStatementMonth: IsoDate.nullable(),
   archived: z.boolean(),
 });

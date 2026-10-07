@@ -21,7 +21,7 @@ async function resolveRefs(
   postedDate: string,
   currentAccountId?: string,
 ): Promise<string | null> {
-  const account = await findAccount(tx, accountId);
+  const account = await findAccount(tx, accountId, true);
   if (!account) throw notFound('Conta');
   // Conta arquivada não recebe lançamentos novos, mas os antigos continuam editáveis nela.
   if (account.archivedAt && accountId !== currentAccountId) {

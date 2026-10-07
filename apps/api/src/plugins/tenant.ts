@@ -1,4 +1,4 @@
-import { type Db, ensurePersonalWorkspace } from '@finlens/db';
+import { type Db, ensurePersonalWorkspace, findPersonalWorkspace } from '@finlens/db';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Auth } from '../auth';
@@ -37,7 +37,10 @@ export const tenantPlugin = fp(async (app: FastifyInstance, opts: { auth: Auth; 
       await reply.status(401).send({ error: 'unauthorized' });
       return;
     }
-    const workspace = await ensurePersonalWorkspace(opts.db, session.user.id);
+    // Leitura primeiro; só cria (com escrita) quando o workspace ainda não existe.
+    const workspace =
+      (await findPersonalWorkspace(opts.db, session.user.id)) ??
+      (await ensurePersonalWorkspace(opts.db, session.user.id));
     request.sessionUser = {
       id: session.user.id,
       name: session.user.name,

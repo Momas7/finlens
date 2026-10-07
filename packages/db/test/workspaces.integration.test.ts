@@ -6,6 +6,7 @@ import {
   createDb,
   type Db,
   ensurePersonalWorkspace,
+  findPersonalWorkspace,
   user,
   withTenant,
   workspaceMembers,
@@ -56,5 +57,13 @@ describe('ensurePersonalWorkspace', () => {
       tx.select().from(categories),
     );
     expect(rows).toHaveLength(DEFAULT_CATEGORIES.length);
+  });
+
+  it('findPersonalWorkspace só lê', async () => {
+    const other = `user-${randomUUID()}`;
+    await ownerDb.insert(user).values({ id: other, name: 'Caio', email: `${other}@example.com` });
+    expect(await findPersonalWorkspace(db, other)).toBeUndefined();
+    const created = await ensurePersonalWorkspace(db, other);
+    expect(await findPersonalWorkspace(db, other)).toEqual(created);
   });
 });

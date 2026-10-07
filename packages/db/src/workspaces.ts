@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { seedDefaultCategories } from './categories';
 import type { Db } from './client';
 import { workspaceMembers, workspaces } from './schema';
@@ -40,5 +40,26 @@ export async function ensurePersonalWorkspace(
     }
 
     return workspace;
+  });
+}
+
+/**
+ * Workspace pessoal do usuário, se já existir e ele for membro. Só leitura: usado em toda
+ * requisição autenticada antes de recorrer a ensurePersonalWorkspace.
+ */
+export async function findPersonalWorkspace(
+  db: Db,
+  userId: string,
+): Promise<{ id: string; name: string } | undefined> {
+  return withTenant(db, { userId }, async (tx) => {
+    const [row] = await tx
+      .select({ id: workspaces.id, name: workspaces.name })
+      .from(workspaces)
+      .innerJoin(
+        workspaceMembers,
+        and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, userId)),
+      )
+      .where(eq(workspaces.personalOwnerId, userId));
+    return row;
   });
 }

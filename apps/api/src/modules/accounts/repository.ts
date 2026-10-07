@@ -1,7 +1,7 @@
 import type { Account, AccountCreate, AccountUpdate } from '@finlens/contracts';
 import { financialAccounts, type Tx, transactions } from '@finlens/db';
 import { statementMonth, todayInSaoPaulo } from '@finlens/domain';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 type AccountRow = typeof financialAccounts.$inferSelect;
 
@@ -26,6 +26,14 @@ function toDto(row: AccountRow, movedCents: bigint, invoiceByMonth: Map<string, 
 
 async function enrich(tx: Tx, rows: AccountRow[]): Promise<Account[]> {
   if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const cardMonths = [
+    ...new Set(
+      rows
+        .filter((r) => r.type === 'credit_card')
+        .map((r) => statementMonth(todayInSaoPaulo(), r.closingDay ?? 31)),
+    ),
+  ];
   // Movimento desde o saldo inicial (contas) e soma por mês de fatura (cartões).
   const moved = await tx
     .select({
@@ -34,16 +42,25 @@ async function enrich(tx: Tx, rows: AccountRow[]): Promise<Account[]> {
     })
     .from(transactions)
     .innerJoin(financialAccounts, eq(financialAccounts.id, transactions.accountId))
+    .where(inArray(transactions.accountId, ids))
     .groupBy(transactions.accountId);
-  const invoices = await tx
-    .select({
-      accountId: transactions.accountId,
-      month: transactions.statementMonth,
-      cents: sql<string>`sum(${transactions.amountCents})`,
-    })
-    .from(transactions)
-    .where(sql`${transactions.statementMonth} is not null`)
-    .groupBy(transactions.accountId, transactions.statementMonth);
+  const invoices =
+    cardMonths.length === 0
+      ? []
+      : await tx
+          .select({
+            accountId: transactions.accountId,
+            month: transactions.statementMonth,
+            cents: sql<string>`sum(${transactions.amountCents})`,
+          })
+          .from(transactions)
+          .where(
+            and(
+              inArray(transactions.accountId, ids),
+              inArray(transactions.statementMonth, cardMonths),
+            ),
+          )
+          .groupBy(transactions.accountId, transactions.statementMonth);
 
   const movedBy = new Map(moved.map((m) => [m.accountId, BigInt(m.cents)]));
   return rows.map((row) => {
@@ -73,9 +90,18 @@ export async function findActiveAccount(tx: Tx, id: string): Promise<AccountRow 
   return row;
 }
 
-/** Conta do workspace, arquivada ou não. */
-export async function findAccount(tx: Tx, id: string): Promise<AccountRow | undefined> {
-  const [row] = await tx.select().from(financialAccounts).where(eq(financialAccounts.id, id));
+/**
+ * Conta do workspace, arquivada ou não. Com `lock`, trava a linha em modo compartilhado até o
+ * fim da transação: uma mudança de fechamento concorrente espera o lançamento terminar (e
+ * vice-versa), então o mês da fatura nunca é calculado com um fechamento desatualizado.
+ */
+export async function findAccount(
+  tx: Tx,
+  id: string,
+  lock = false,
+): Promise<AccountRow | undefined> {
+  const query = tx.select().from(financialAccounts).where(eq(financialAccounts.id, id));
+  const [row] = lock ? await query.for('share') : await query;
   return row;
 }
 

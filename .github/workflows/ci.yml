@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgres://finlens_app:finlens_app@localhost:5432/finlens
+  DATABASE_OWNER_URL: postgres://finlens_owner:finlens_owner@localhost:5432/finlens
+  TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+  BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-000000
+  BETTER_AUTH_URL: http://localhost:3000
+  WEB_ORIGIN: http://localhost:3000
+  API_URL: http://localhost:3333
+  PORT: 3333
+  LOG_LEVEL: warn
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @finlens/web build
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create database roles
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -f infra/postgres/init/01-roles.sql
+        env:
+          PGPASSWORD: postgres
+      - run: pnpm test:integration
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create database roles
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -f infra/postgres/init/01-roles.sql
+        env:
+          PGPASSWORD: postgres
+      - run: pnpm --filter @finlens/db db:migrate
+      - run: pnpm --filter @finlens/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @finlens/web test:e2e
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

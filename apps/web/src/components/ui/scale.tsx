@@ -16,6 +16,7 @@ type ScaleProps = {
 export function Scale({ value, max, limit, ticks, label, valueText, className = '' }: ScaleProps) {
   const g = scaleGeometry({ value, max, limit, ticks });
   return (
+    // biome-ignore lint/a11y/useSemanticElements: <meter> nativo não aceita a régua desenhada; role=meter mantém a semântica
     <div
       role="meter"
       aria-label={label}

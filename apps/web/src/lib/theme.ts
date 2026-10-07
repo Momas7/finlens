@@ -23,5 +23,14 @@ export function resolveTheme(pref: ThemePreference, systemPrefersDark: boolean):
   return pref;
 }
 
+/**
+ * Próxima preferência ao clicar no botão de tema. Pula a opção que não muda nada visível:
+ * de "sistema" vai direto para o tema oposto ao do sistema, e de lá volta para "sistema".
+ */
+export function nextTheme(pref: ThemePreference, systemPrefersDark: boolean): ThemePreference {
+  if (pref === 'system') return systemPrefersDark ? 'light' : 'dark';
+  return 'system';
+}
+
 /** Roda antes da primeira pintura para não piscar o tema errado. Espelha readStoredTheme + resolveTheme. */
 export const themeScript = `(function(){var p;try{p=localStorage.getItem('${THEME_STORAGE_KEY}')}catch(e){}if(p!=='light'&&p!=='dark'){p=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=p})()`;

@@ -9,12 +9,15 @@
   --scale: #b7c0c7;
   --tape: #f2c230;
   --on-tape: #2b2205;
+  --tape-tick: #7a5e0a;
+  --line: #76818a;
   --mark: #b83325;
   --gain: #2e7d6b;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
+  --line: #6e7983;
   --page: #1a1f24;
   --raised: #22282e;
   --ink: #e6eaed;
@@ -27,6 +30,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --line: #6e7983;
     --page: #1a1f24;
     --raised: #22282e;
     --ink: #e6eaed;
@@ -46,6 +50,8 @@
   --color-scale: var(--scale);
   --color-tape: var(--tape);
   --color-on-tape: var(--on-tape);
+  --color-tape-tick: var(--tape-tick);
+  --color-line: var(--line);
   --color-mark: var(--mark);
   --color-gain: var(--gain);
   --font-sans: var(--font-archivo), system-ui, sans-serif;

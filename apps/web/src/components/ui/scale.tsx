@@ -52,6 +52,27 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
           />
         ))}
       </div>
+      {g.filledPct > 0 && (
+        // Traços repetidos sobre o trecho medido, em cor que contrasta com a fita.
+        <div
+          className="scale-measure absolute top-0 left-0 h-3 overflow-hidden"
+          style={{ width: `${g.filledPct}%` }}
+          aria-hidden="true"
+        >
+          <div
+            className="absolute inset-y-0 left-0"
+            style={{ width: `${(100 / g.filledPct) * 100}%` }}
+          >
+            {g.tickPcts.map((pct, i) => (
+              <span
+                key={pct}
+                className={`absolute bottom-0 w-px bg-tape-tick ${i % 5 === 0 ? 'h-3' : 'h-1.5'}`}
+                style={{ left: `${pct}%` }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       {g.limitPct !== null && (
         <span
           className="absolute -top-1 h-5 w-0.5 bg-ink"
@@ -61,7 +82,7 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
       )}
       <span
         className="absolute -top-0.5 h-4 w-0.5 -translate-x-1/2 bg-ink"
-        style={{ left: `${g.markerPct}%` }}
+        style={{ left: `clamp(1px, ${g.markerPct}%, calc(100% - 1px))` }}
         aria-hidden="true"
       />
     </div>

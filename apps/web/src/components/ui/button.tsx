@@ -8,7 +8,7 @@ const base =
   'inline-flex items-center justify-center gap-2 rounded-[6px] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-55';
 const variants: Record<Variant, string> = {
   primary: 'bg-ink text-page hover:bg-ink/85',
-  secondary: 'border border-scale bg-raised text-ink hover:border-ink-soft',
+  secondary: 'border border-line bg-raised text-ink hover:border-ink',
   ghost: 'text-ink-soft hover:bg-ink/5 hover:text-ink',
 };
 const sizes: Record<Size, string> = {

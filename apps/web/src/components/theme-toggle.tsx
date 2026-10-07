@@ -2,33 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import {
+  nextTheme,
   readStoredTheme,
   resolveTheme,
   THEME_STORAGE_KEY,
   type ThemePreference,
 } from '@/lib/theme';
 
-const NEXT: Record<ThemePreference, ThemePreference> = {
-  system: 'light',
-  light: 'dark',
-  dark: 'system',
-};
 const LABEL: Record<ThemePreference, string> = {
   system: 'Sistema',
   light: 'Claro',
   dark: 'Escuro',
 };
 
+const systemPrefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+
 function apply(pref: ThemePreference) {
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  document.documentElement.dataset.theme = resolveTheme(pref, dark);
+  document.documentElement.dataset.theme = resolveTheme(pref, systemPrefersDark());
 }
 
 export function ThemeToggle() {
   const [pref, setPref] = useState<ThemePreference>('system');
+  // O rótulo só aparece depois de ler a preferência salva, para não piscar "Sistema".
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setPref(readStoredTheme(() => window.localStorage));
+    setReady(true);
+
+    // Outra aba trocou o tema: acompanha.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY) return;
+      const next = readStoredTheme(() => window.localStorage);
+      setPref(next);
+      apply(next);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   useEffect(() => {
@@ -40,7 +50,7 @@ export function ThemeToggle() {
   }, [pref]);
 
   function cycle() {
-    const next = NEXT[pref];
+    const next = nextTheme(pref, systemPrefersDark());
     setPref(next);
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
@@ -58,7 +68,7 @@ export function ThemeToggle() {
       className="inline-flex h-9 items-center gap-2 rounded-[6px] px-2.5 text-[13px] text-ink-soft hover:bg-ink/5 hover:text-ink"
     >
       <ThemeIcon pref={pref} />
-      <span className="hidden sm:inline">{LABEL[pref]}</span>
+      <span className={`hidden sm:inline ${ready ? '' : 'invisible'}`}>{LABEL[pref]}</span>
     </button>
   );
 }

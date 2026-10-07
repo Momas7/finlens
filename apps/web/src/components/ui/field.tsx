@@ -24,7 +24,7 @@ export function Field({ label, name, hint, error, className = '', ...props }: Fi
         name={name}
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
-        className="h-11 w-full rounded-[6px] border border-scale bg-raised px-3 text-[15px] text-ink outline-none placeholder:text-ink-soft focus-visible:border-ink aria-invalid:border-mark"
+        className="h-11 w-full rounded-[6px] border border-line bg-raised px-3 text-[15px] text-ink outline-none placeholder:text-ink-soft focus-visible:border-ink aria-invalid:border-mark"
         {...props}
       />
       {hint && (

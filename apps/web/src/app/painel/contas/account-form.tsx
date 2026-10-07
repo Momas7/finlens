@@ -55,7 +55,7 @@ export function AccountForm({ account, today }: { account?: Account; today: stri
           onChange={(e) => setType(e.target.value)}
           disabled={Boolean(account)}
           aria-describedby={account ? 'account-type-hint' : undefined}
-          className="h-11 w-full rounded-[6px] border border-scale bg-raised px-3 text-[15px] disabled:opacity-70"
+          className="h-11 w-full rounded-[6px] border border-line bg-raised px-3 text-[15px] disabled:opacity-70"
         >
           {TYPES.map((t) => (
             <option key={t.value} value={t.value}>

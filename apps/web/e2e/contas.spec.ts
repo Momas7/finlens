@@ -33,3 +33,18 @@ test('validação mostra erro no campo', async ({ page }) => {
   await expect(closing).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByText('Use um dia de 1 a 31.')).toBeVisible();
 });
+
+test('apagar campo obrigatório na edição mostra erro', async ({ page }) => {
+  await signUp(page);
+  await page.goto('/painel/contas/nova');
+  await page.getByLabel('Nome').fill('Cartão');
+  await page.getByLabel('Tipo').selectOption('credit_card');
+  await page.getByLabel('Dia de fechamento').fill('10');
+  await page.getByLabel('Dia de vencimento').fill('17');
+  await page.getByRole('button', { name: 'Salvar conta' }).click();
+  await page.getByRole('link', { name: 'Cartão' }).click();
+  await page.getByLabel('Dia de fechamento').fill('');
+  await page.getByRole('button', { name: 'Salvar conta' }).click();
+  await expect(page.getByLabel('Dia de fechamento')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page).not.toHaveURL(/\/painel\/contas$/);
+});

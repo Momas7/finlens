@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { apiSend, UnauthorizedError } from '@/lib/api';
+import { parseId } from '@/lib/ids';
 import { parseAmountInput } from '@/lib/money';
 
 export type FormState = { fieldErrors?: Record<string, string>; formError?: string };
@@ -19,7 +20,9 @@ async function guard<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function saveTransaction(_prev: FormState, form: FormData): Promise<FormState> {
-  const id = text(form, 'id');
+  const rawId = text(form, 'id');
+  const id = rawId ? parseId(rawId) : '';
+  if (id === null) return { formError: 'Lançamento inválido. Recarregue a página.' };
   const abs = parseAmountInput(text(form, 'amount'));
   if (abs === null) {
     return { fieldErrors: { amount: 'Informe um valor maior que zero, como 45,90.' } };
@@ -46,7 +49,9 @@ export async function saveTransaction(_prev: FormState, form: FormData): Promise
   redirect('/painel/transacoes');
 }
 
-export async function deleteTransaction(id: string): Promise<void> {
+export async function deleteTransaction(rawId: string): Promise<void> {
+  const id = parseId(rawId);
+  if (!id) redirect('/painel/transacoes');
   await guard(() => apiSend('DELETE', `/v1/transactions/${id}`));
   redirect('/painel/transacoes');
 }

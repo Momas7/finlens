@@ -19,7 +19,7 @@ export function Select({ label, name, error, className = '', children, ...props 
         name={name}
         aria-describedby={errorId}
         aria-invalid={error ? true : undefined}
-        className="h-11 w-full rounded-[6px] border border-scale bg-raised px-3 text-[15px] text-ink aria-invalid:border-mark"
+        className="h-11 w-full rounded-[6px] border border-line bg-raised px-3 text-[15px] text-ink aria-invalid:border-mark"
         {...props}
       >
         {children}

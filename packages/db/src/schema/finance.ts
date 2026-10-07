@@ -214,3 +214,17 @@ export const classificationFeedback = pgTable(
     index('classification_feedback_workspace_idx').on(t.workspaceId, t.createdAt),
   ],
 );
+
+/** Sugestões de regra que o usuário dispensou; não voltam a ser propostas. */
+export const ruleSuggestionDismissals = pgTable(
+  'rule_suggestion_dismissals',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    suggestionId: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('rule_suggestion_dismissals_workspace_suggestion_key').on(t.workspaceId, t.suggestionId),
+  ],
+);

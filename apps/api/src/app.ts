@@ -1,0 +1,48 @@
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import type { Db } from '@finlens/db';
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import { createAuth } from './auth';
+import type { Config } from './config';
+import { healthRoutes } from './modules/health/routes';
+import { meRoutes } from './modules/me/routes';
+import { authRoutes } from './plugins/auth-routes';
+import { tenantPlugin } from './plugins/tenant';
+
+const REDACT = {
+  paths: [
+    'req.headers.cookie',
+    'req.headers.authorization',
+    'res.headers["set-cookie"]',
+    '*.password',
+    'body.password',
+  ],
+  censor: '[redacted]',
+};
+
+export async function buildApp(deps: {
+  config: Config;
+  db: Db;
+  logger?: FastifyServerOptions['logger'];
+}): Promise<FastifyInstance> {
+  const { config, db } = deps;
+  const logger =
+    deps.logger && typeof deps.logger === 'object'
+      ? { ...deps.logger, redact: REDACT }
+      : { level: config.logLevel, redact: REDACT };
+
+  const app = Fastify({ logger, bodyLimit: 1024 * 1024 });
+
+  await app.register(helmet);
+  await app.register(cors, { origin: config.webOrigin, credentials: true });
+  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
+
+  const auth = createAuth(db, config, app.log);
+  await app.register(tenantPlugin, { auth, db });
+  await app.register(healthRoutes, { db });
+  await app.register(authRoutes, { auth, config });
+  await app.register(meRoutes, { db });
+
+  return app;
+}

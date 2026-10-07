@@ -1,0 +1,36 @@
+import { eq } from 'drizzle-orm';
+import type { Db } from './client';
+import { workspaceMembers, workspaces } from './schema';
+import { withTenant } from './tenant';
+
+const PERSONAL_WORKSPACE_NAME = 'Pessoal';
+
+/**
+ * Garante que o usuário tenha um workspace pessoal e seja `owner` dele.
+ * Idempotente e seguro sob concorrência: `personal_owner_id` é único e os inserts
+ * usam ON CONFLICT DO NOTHING.
+ */
+export async function ensurePersonalWorkspace(
+  db: Db,
+  userId: string,
+): Promise<{ id: string; name: string }> {
+  return withTenant(db, { userId }, async (tx) => {
+    await tx
+      .insert(workspaces)
+      .values({ name: PERSONAL_WORKSPACE_NAME, personalOwnerId: userId })
+      .onConflictDoNothing({ target: workspaces.personalOwnerId });
+
+    const [workspace] = await tx
+      .select({ id: workspaces.id, name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.personalOwnerId, userId));
+    if (!workspace) throw new Error('Workspace pessoal não encontrado após criação');
+
+    await tx
+      .insert(workspaceMembers)
+      .values({ workspaceId: workspace.id, userId, role: 'owner' })
+      .onConflictDoNothing();
+
+    return workspace;
+  });
+}

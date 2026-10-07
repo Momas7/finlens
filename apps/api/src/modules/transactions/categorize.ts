@@ -1,5 +1,6 @@
 import { classificationFeedback, type Tx, type transactions } from '@finlens/db';
 import { amountBucket, matchMerchant, normalize } from '@finlens/domain';
+import type { ActiveCategory } from '../classification/evidence';
 import { classifyFor } from '../classification/service';
 
 type ClassificationFields = Pick<
@@ -30,6 +31,7 @@ export async function categorize(
   tx: Tx,
   decision: CategoryDecision,
   input: { description: string; amountCents: bigint; accountId: string; transactionId?: string },
+  active?: Map<string, ActiveCategory>,
 ): Promise<{ fields: ClassificationFields; feedback: Feedback | null }> {
   const normalized = normalize(input.description).normalized;
   const merchantKey = matchMerchant(normalized)?.key ?? null;
@@ -52,12 +54,16 @@ export async function categorize(
     };
   }
 
-  const prediction = await classifyFor(tx, {
-    description: input.description,
-    amountCents: input.amountCents,
-    accountId: input.accountId,
-    excludeTransactionId: input.transactionId,
-  });
+  const prediction = await classifyFor(
+    tx,
+    {
+      description: input.description,
+      amountCents: input.amountCents,
+      accountId: input.accountId,
+      excludeTransactionId: input.transactionId,
+    },
+    active,
+  );
 
   if (decision === 'auto') {
     const applied = prediction.status === 'auto' || prediction.status === 'likely';

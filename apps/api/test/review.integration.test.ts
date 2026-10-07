@@ -90,6 +90,16 @@ describe('revisão, confirmação em lote e semelhantes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ confirmed: 3 });
     expect(await feedbackCount()).toBe(before + 3);
+    // Previsão "naquele momento": o lote não pode se usar como histórico.
+    const { id: workspaceId } = await ensurePersonalWorkspace(t.db, anaId);
+    const rows = await withTenant(t.db, { userId: anaId, workspaceId }, (tx) =>
+      tx.select().from(classificationFeedback),
+    );
+    expect(
+      rows
+        .filter((r) => r.descriptionNormalized === 'LOJA NOVA X')
+        .map((r) => r.predictedCategoryId),
+    ).toEqual([null, null, null]);
     const again = await confirm({
       ids: group.transactionIds,
       categoryId: cat['Compras › Outras compras'],

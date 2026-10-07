@@ -19,7 +19,8 @@ export async function confirmTransactions(
   const rows = await tx.select().from(transactions).where(inArray(transactions.id, ids));
   if (rows.length !== ids.length) throw notFound('Lançamento');
 
-  const category = (await activeCategories(tx)).get(categoryId);
+  const active = await activeCategories(tx);
+  const category = active.get(categoryId);
   if (!category) throw notFound('Categoria');
   const incompatible = rows.some(
     (r) =>
@@ -31,22 +32,32 @@ export async function confirmTransactions(
     });
   }
 
-  let confirmed = 0;
-  for (const row of rows) {
-    if (row.classificationStatus === 'confirmed' && row.categoryId === categoryId) continue;
-    const { fields, feedback } = await categorize(
-      tx,
-      { chosen: categoryId },
-      {
-        description: row.description,
-        amountCents: row.amountCents,
-        accountId: row.accountId,
-        transactionId: row.id,
-      },
-    );
-    await tx.update(transactions).set(fields).where(eq(transactions.id, row.id));
-    await recordFeedback(tx, workspaceId, row.id, feedback);
-    confirmed++;
+  // Prevê tudo antes de gravar: o feedback guarda o que o motor diria antes do lote, sem que
+  // as primeiras linhas confirmadas virem histórico das seguintes.
+  const pending = rows.filter(
+    (r) => !(r.classificationStatus === 'confirmed' && r.categoryId === categoryId),
+  );
+  const decided = [];
+  for (const row of pending) {
+    decided.push({
+      id: row.id,
+      ...(await categorize(
+        tx,
+        { chosen: categoryId },
+        {
+          description: row.description,
+          amountCents: row.amountCents,
+          accountId: row.accountId,
+          transactionId: row.id,
+        },
+        active,
+      )),
+    });
   }
+  for (const { id, fields, feedback } of decided) {
+    await tx.update(transactions).set(fields).where(eq(transactions.id, id));
+    await recordFeedback(tx, workspaceId, id, feedback);
+  }
+  const confirmed = decided.length;
   return confirmed;
 }

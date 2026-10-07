@@ -19,6 +19,13 @@ export function toTransactionDto(row: Row): Transaction {
     description: row.description,
     notes: row.notes,
     source: row.source,
+    classificationStatus: row.classificationStatus,
+    classificationSource: row.classificationSource,
+    classificationConfidence:
+      row.classificationConfidence === null ? null : Number(row.classificationConfidence),
+    classificationExplanation: row.classificationExplanation,
+    suggestedCategoryId: row.suggestedCategoryId,
+    merchantKey: row.merchantKey,
   };
 }
 

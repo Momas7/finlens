@@ -8,8 +8,10 @@ import type { Config } from './config';
 import { registerErrorHandler } from './http/errors';
 import { accountRoutes } from './modules/accounts/routes';
 import { categoryRoutes } from './modules/categories/routes';
+import { classificationRoutes } from './modules/classification/routes';
 import { healthRoutes } from './modules/health/routes';
 import { meRoutes } from './modules/me/routes';
+import { ruleRoutes } from './modules/rules/routes';
 import { transactionRoutes } from './modules/transactions/routes';
 import { authRoutes } from './plugins/auth-routes';
 import { tenantPlugin } from './plugins/tenant';
@@ -41,7 +43,11 @@ export async function buildApp(deps: {
 
   await app.register(helmet);
   await app.register(cors, { origin: config.webOrigin, credentials: true });
-  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
+  await app.register(rateLimit, {
+    global: true,
+    max: config.rateLimitPerMinute,
+    timeWindow: '1 minute',
+  });
 
   registerErrorHandler(app);
 
@@ -53,6 +59,8 @@ export async function buildApp(deps: {
   await app.register(accountRoutes, { db });
   await app.register(categoryRoutes, { db });
   await app.register(transactionRoutes, { db });
+  await app.register(classificationRoutes, { db });
+  await app.register(ruleRoutes, { db });
 
   return app;
 }

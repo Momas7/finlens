@@ -7,6 +7,7 @@ const ITEMS = [
   { href: '/painel', label: 'Início' },
   { href: '/painel/transacoes', label: 'Transações' },
   { href: '/painel/contas', label: 'Contas' },
+  { href: '/painel/categorias', label: 'Categorias' },
 ];
 
 export function PainelNav() {

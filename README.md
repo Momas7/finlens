@@ -4,7 +4,9 @@ Analista financeiro pessoal open source e self-hosted. Você importa extratos, o
 
 Não é um CRUD de despesas. O foco é um pipeline de classificação híbrido e mensurável (regras, histórico do usuário, similaridade e LLM apenas como último recurso) e um motor de insights determinístico que nunca inventa números.
 
-> **Status:** fase F0 (fundação) — autenticação, workspaces e isolamento de dados prontos. Veja o [roadmap](docs/architecture.md#11-roadmap).
+> **Status:** contas, lançamentos e classificação automática prontos (F0, F1a e F2a). Veja o [roadmap](docs/architecture.md#11-roadmap).
+
+**Classificador:** em um dataset sintético de 301 lançamentos, 85% são categorizados sozinhos com 99,6% de precisão — [relatório completo](docs/classifier-eval.md), regenerado e verificado no CI.
 
 ## Stack
 
@@ -59,6 +61,7 @@ pnpm lint
 pnpm typecheck
 pnpm test                 # unitários
 pnpm test:integration     # precisa do Postgres do compose rodando
+pnpm eval:classifier      # avalia o classificador e atualiza docs/classifier-eval.md
 pnpm --filter @finlens/web test:e2e
 ```
 

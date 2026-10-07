@@ -11,7 +11,7 @@ async function launch(
   await page.getByLabel('Valor').fill(opts.amount);
   await page.getByLabel('Descrição').fill(opts.description);
   await page.getByLabel('Conta').selectOption({ label: 'Inter' });
-  await page.getByLabel('Categoria').selectOption({ label: opts.category });
+  await page.getByLabel('Categoria', { exact: true }).selectOption({ label: opts.category });
   await page.getByRole('button', { name: 'Salvar lançamento' }).click();
   await expect(page).toHaveURL(/\/painel\/transacoes(\?|$)/);
 }

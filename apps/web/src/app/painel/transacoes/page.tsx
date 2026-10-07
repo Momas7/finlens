@@ -1,4 +1,10 @@
-import { AccountList, CategoryTree, TransactionPage, TransactionQuery } from '@finlens/contracts';
+import {
+  AccountList,
+  CategoryTree,
+  type Transaction,
+  TransactionPage,
+  TransactionQuery,
+} from '@finlens/contracts';
 import Link from 'next/link';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -8,6 +14,27 @@ import { accountLabel } from '@/lib/accounts';
 import { apiFetch } from '@/lib/api';
 import { categoryLabels, categoryOptions } from '@/lib/categories';
 import { formatCents } from '@/lib/money';
+
+const MARKER: Partial<Record<Transaction['classificationStatus'], string>> = {
+  auto: 'automática',
+  likely: 'provável',
+};
+
+/** Como a categoria chegou ali; lançamentos confirmados pela pessoa não ganham marca. */
+function ClassificationMarker({
+  transaction,
+  labels,
+}: {
+  transaction: Transaction;
+  labels: Map<string, string>;
+}) {
+  const status = transaction.classificationStatus;
+  const text =
+    status === 'suggested' && transaction.suggestedCategoryId
+      ? `sugestão: ${labels.get(transaction.suggestedCategoryId) ?? 'categoria arquivada'}`
+      : MARKER[status];
+  return text ? <span className="block text-[12px] text-ink-soft">{text}</span> : null;
+}
 
 const FILTERS = ['q', 'accountId', 'categoryId', 'from', 'to'] as const;
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -161,6 +188,7 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
                     </td>
                     <td className="hidden px-5 py-3.5 text-ink-soft md:table-cell">
                       {t.categoryId ? labels.get(t.categoryId) : 'Sem categoria'}
+                      <ClassificationMarker transaction={t} labels={labels} />
                     </td>
                     <td className="hidden px-5 py-3.5 text-ink-soft lg:table-cell">
                       {accountNames.get(t.accountId)}

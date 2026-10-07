@@ -36,6 +36,27 @@
       "when": 1791388617834,
       "tag": "0004_finance_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791404072115,
+      "tag": "0005_lazy_post",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791404072866,
+      "tag": "0006_classification_rls_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791404129268,
+      "tag": "0007_classification_backfill",
+      "breakpoints": true
     }
   ]
 }

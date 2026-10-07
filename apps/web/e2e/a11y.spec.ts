@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { signUp } from './helpers';
+import { createCheckingAccount, signUp } from './helpers';
 
 async function seriousViolations(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
@@ -32,10 +32,19 @@ for (const theme of ['light', 'dark'] as const) {
         '/painel/contas/nova',
         '/painel/transacoes',
         '/painel/transacoes/nova',
+        '/painel/categorias',
       ]) {
         await page.goto(path);
         expect(await seriousViolations(page), path).toEqual([]);
       }
+      // Formulário com sugestão visível.
+      await createCheckingAccount(page);
+      await page.goto('/painel/transacoes/nova');
+      await page.getByLabel('Descrição').fill('IFOOD*REST');
+      await expect(page.getByRole('status', { name: 'Sugestão automática' })).toContainText(
+        'Delivery',
+      );
+      expect(await seriousViolations(page), 'sugestão').toEqual([]);
     });
   });
 }

@@ -2,9 +2,10 @@ import { AccountList, CategoryTree, Transaction } from '@finlens/contracts';
 import { todayInSaoPaulo } from '@finlens/domain';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
-import { categoryOptions } from '@/lib/categories';
+import { categoryLabels, categoryOptions } from '@/lib/categories';
 import { TransactionForm } from '../transaction-form';
 import { DeleteTransactionButton } from './delete-button';
+import { WhyPanel } from './why-panel';
 
 export default async function EditarTransacaoPage({
   params,
@@ -24,6 +25,19 @@ export default async function EditarTransacaoPage({
         groups={categoryOptions(tree)}
         today={todayInSaoPaulo()}
         transaction={transaction}
+        currentCategoryLabel={
+          transaction.categoryId
+            ? (categoryLabels(tree).get(transaction.categoryId) ?? 'Categoria arquivada')
+            : undefined
+        }
+      />
+      <WhyPanel
+        transaction={transaction}
+        categoryLabel={
+          categoryLabels(tree).get(
+            transaction.categoryId ?? transaction.suggestedCategoryId ?? '',
+          ) ?? null
+        }
       />
       <div className="max-w-xl border-t border-scale pt-6">
         <DeleteTransactionButton id={transaction.id} />

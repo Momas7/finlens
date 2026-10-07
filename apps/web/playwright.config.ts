@@ -16,8 +16,8 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @finlens/api dev',
-      // Todo o tráfego do e2e chega pelo mesmo IP; o limite padrão (10/min) barraria os cadastros.
-      env: { ...definedEnv(), AUTH_RATE_LIMIT_PER_MINUTE: '1000' },
+      // Todo o tráfego do e2e chega pelo mesmo IP (o Next); os limites padrão barrariam a suíte.
+      env: { ...definedEnv(), AUTH_RATE_LIMIT_PER_MINUTE: '1000', RATE_LIMIT_PER_MINUTE: '20000' },
       url: 'http://localhost:3333/health',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

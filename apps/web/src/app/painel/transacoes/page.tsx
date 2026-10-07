@@ -47,9 +47,15 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
       <search aria-label="Filtrar transações">
         <form
           method="get"
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] lg:items-end"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] lg:items-end"
         >
-          <Field label="Buscar" name="q" type="search" defaultValue={filters.get('q') ?? ''} />
+          <Field
+            className="col-span-2 lg:col-span-1"
+            label="Buscar"
+            name="q"
+            type="search"
+            defaultValue={filters.get('q') ?? ''}
+          />
           <Select label="Conta" name="accountId" defaultValue={filters.get('accountId') ?? ''}>
             <option value="">Todas</option>
             {accounts.map((a) => (
@@ -76,7 +82,7 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
           </Select>
           <Field label="De" name="from" type="date" defaultValue={filters.get('from') ?? ''} />
           <Field label="Até" name="to" type="date" defaultValue={filters.get('to') ?? ''} />
-          <Button type="submit" variant="secondary">
+          <Button type="submit" variant="secondary" className="col-span-2 h-11 lg:col-span-1">
             Filtrar
           </Button>
         </form>
@@ -99,7 +105,7 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
             <caption className="sr-only">Lançamentos</caption>
             <thead className="text-[13px] text-ink-soft">
               <tr className="border-b border-scale">
-                <th scope="col" className="px-5 py-3 font-normal">
+                <th scope="col" className="hidden px-5 py-3 font-normal sm:table-cell">
                   Data
                 </th>
                 <th scope="col" className="px-5 py-3 font-normal">
@@ -121,16 +127,19 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
                 const income = !t.amountCents.startsWith('-');
                 return (
                   <tr key={t.id} className="border-b border-scale last:border-b-0">
-                    <td className="px-5 py-3.5 whitespace-nowrap text-ink-soft tabular-nums">
+                    <td className="hidden px-5 py-3.5 whitespace-nowrap text-ink-soft tabular-nums sm:table-cell">
                       {dateFormatter.format(new Date(`${t.postedDate}T00:00:00Z`))}
                     </td>
-                    <td className="max-w-[16rem] px-5 py-3.5">
+                    <td className="max-w-[16rem] min-w-0 px-5 py-3.5">
                       <Link
                         href={`/painel/transacoes/${t.id}`}
                         className="block truncate font-medium hover:underline"
                       >
                         {t.description}
                       </Link>
+                      <p className="text-[13px] text-ink-soft tabular-nums sm:hidden">
+                        {dateFormatter.format(new Date(`${t.postedDate}T00:00:00Z`))}
+                      </p>
                     </td>
                     <td className="hidden px-5 py-3.5 text-ink-soft md:table-cell">
                       {t.categoryId ? labels.get(t.categoryId) : 'Sem categoria'}

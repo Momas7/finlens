@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import { DEFAULT_CATEGORIES } from '@finlens/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  categories,
   createDb,
   type Db,
   ensurePersonalWorkspace,
@@ -42,5 +44,17 @@ describe('ensurePersonalWorkspace', () => {
     );
     expect(ws).toHaveLength(1);
     expect(members).toEqual([expect.objectContaining({ userId, role: 'owner' })]);
+  });
+
+  it('chamadas concorrentes semeiam categorias uma vez', async () => {
+    const other = `user-${randomUUID()}`;
+    await ownerDb.insert(user).values({ id: other, name: 'Bia', email: `${other}@example.com` });
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => ensurePersonalWorkspace(db, other)),
+    );
+    const rows = await withTenant(db, { userId: other, workspaceId: results[0]?.id }, (tx) =>
+      tx.select().from(categories),
+    );
+    expect(rows).toHaveLength(DEFAULT_CATEGORIES.length);
   });
 });

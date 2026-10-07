@@ -87,22 +87,24 @@ export function suggestRule(
         count: inBucket.length,
       });
     }
-    let best: { start: number; end: number; category: string; count: number } | null = null;
-    let run: { start: number; end: number; category: string; count: number } | null = null;
+    type Run = { start: number; end: number; category: string; count: number };
+    let best: Run | null = null;
+    let run: Run | null = null;
     for (let i = 0; i < BUCKETS.length; i++) {
       const info = byBucket.get(BUCKETS[i] as AmountBucket);
       if (info?.category && run && run.category === info.category && run.end === i - 1) {
-        run = { ...run, end: i, count: run.count + info.count };
+        run = { start: run.start, end: i, category: run.category, count: run.count + info.count };
       } else if (info?.category) {
         run = { start: i, end: i, category: info.category, count: info.count };
       } else if (!info) {
         // Faixa sem confirmações não quebra a sequência.
-        if (run) run = { ...run, end: i };
+        if (run) run = { start: run.start, end: i, category: run.category, count: run.count };
         continue;
       } else {
         run = null;
       }
-      if (run && (!best || run.count > best.count)) best = { ...run };
+      if (run && (!best || run.count > best.count))
+        best = { start: run.start, end: run.end, category: run.category, count: run.count };
     }
     if (best && best.count >= MIN_CONFIRMATIONS) {
       // Corta faixas vazias das pontas.

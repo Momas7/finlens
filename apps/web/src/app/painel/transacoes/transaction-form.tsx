@@ -72,6 +72,9 @@ export function TransactionForm({
   return (
     <form action={action} onSubmit={submitKeepingValues} className="max-w-xl space-y-5" noValidate>
       {transaction && <input type="hidden" name="id" value={transaction.id} />}
+      {transaction && (
+        <input type="hidden" name="previousCategoryId" value={transaction.categoryId ?? ''} />
+      )}
       <fieldset>
         <legend className="text-[13px] font-medium">Tipo</legend>
         <div className="mt-2 inline-flex rounded-[6px] border border-scale bg-raised p-1">

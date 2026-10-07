@@ -60,6 +60,19 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByRole('region', { name: 'Regras sugeridas' })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page), 'com grupos').toEqual([]);
+
+      // Tela de semelhantes depois de corrigir uma padaria automática.
+      await addExpense(page, 'PADARIA SAO JOAO', '11,00');
+      await addExpense(page, 'PADARIA SAO JOAO', '13,00');
+      await page.goto('/painel/transacoes');
+      await page.getByRole('row', { name: /11,00/ }).getByRole('link').first().click();
+      await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
+      await page
+        .getByLabel('Categoria', { exact: true })
+        .selectOption({ label: 'Alimentação › Mercado' });
+      await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+      await expect(page.getByRole('heading', { name: /^Aplicar/ })).toBeVisible();
+      expect(await seriousViolations(page), 'semelhantes').toEqual([]);
     });
   });
 }

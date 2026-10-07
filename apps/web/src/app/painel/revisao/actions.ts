@@ -40,7 +40,7 @@ export async function confirmGroup(_prev: ReviewState, form: FormData): Promise<
   );
   if (!result.ok) return { error: result.error.message };
   revalidatePath('/painel', 'layout');
-  redirect('/painel/revisao');
+  redirect(`/painel/transacoes/${ids[0]}/semelhantes?categoria=${categoryId}&de=revisao`);
 }
 
 export type SuggestionInput = {

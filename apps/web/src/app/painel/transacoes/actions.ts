@@ -1,6 +1,7 @@
 'use server';
 
 import { Transaction } from '@finlens/contracts';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { apiFetch, apiSend, UnauthorizedError } from '@/lib/api';
 import { parseId } from '@/lib/ids';
@@ -54,6 +55,13 @@ export async function saveTransaction(_prev: FormState, form: FormData): Promise
     );
     return { fieldErrors, formError: result.error.fields ? undefined : result.error.message };
   }
+  // O contador de revisão fica no layout.
+  revalidatePath('/painel', 'layout');
+  // Categoria escolhida diferente da anterior: oferece aplicar aos parecidos.
+  const chosen = payload.categoryId;
+  if (id && chosen && chosen !== 'auto' && chosen !== text(form, 'previousCategoryId')) {
+    redirect(`/painel/transacoes/${id}/semelhantes?categoria=${chosen}`);
+  }
   redirect('/painel/transacoes');
 }
 
@@ -61,6 +69,7 @@ export async function deleteTransaction(rawId: string): Promise<void> {
   const id = parseId(rawId);
   if (!id) redirect('/painel/transacoes');
   await guard(() => apiSend('DELETE', `/v1/transactions/${id}`));
+  revalidatePath('/painel', 'layout');
   redirect('/painel/transacoes');
 }
 
@@ -84,4 +93,31 @@ export async function createRuleFromTransaction(
     if (!result.ok) return { message: result.error.fields?.pattern ?? result.error.message };
     return { done: true, message: 'Regra criada.' };
   });
+}
+
+export type ApplyState = { error?: string };
+
+/** Destino depois da tela de semelhantes: a revisão, se veio dela; senão a lista. */
+export async function backFromSimilar(from: string | undefined): Promise<string> {
+  return from === 'revisao' ? '/painel/revisao' : '/painel/transacoes';
+}
+
+/** Confirma os semelhantes marcados na categoria da correção. */
+export async function applyToSimilar(
+  rawCategoryId: string,
+  from: string | undefined,
+  _prev: ApplyState,
+  form: FormData,
+): Promise<ApplyState> {
+  const categoryId = parseId(rawCategoryId);
+  if (!categoryId) return { error: 'Categoria inválida. Recarregue a página.' };
+  const ids = form.getAll('ids').map((v) => parseId(String(v)));
+  if (ids.length === 0) return { error: 'Marque ao menos um lançamento.' };
+  if (ids.some((v) => v === null)) return { error: 'Lançamento inválido. Recarregue a página.' };
+  const result = await guard(() =>
+    apiSend('POST', '/v1/transactions/confirm', { ids, categoryId }),
+  );
+  if (!result.ok) return { error: result.error.message };
+  revalidatePath('/painel', 'layout');
+  redirect(await backFromSimilar(from));
 }

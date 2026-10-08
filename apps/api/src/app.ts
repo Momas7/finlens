@@ -11,6 +11,8 @@ import { categoryRoutes } from './modules/categories/routes';
 import { classificationRoutes } from './modules/classification/routes';
 import { healthRoutes } from './modules/health/routes';
 import { meRoutes } from './modules/me/routes';
+import { reviewRoutes } from './modules/review/routes';
+import { ruleSuggestionRoutes } from './modules/rule-suggestions/routes';
 import { ruleRoutes } from './modules/rules/routes';
 import { transactionRoutes } from './modules/transactions/routes';
 import { authRoutes } from './plugins/auth-routes';
@@ -61,6 +63,8 @@ export async function buildApp(deps: {
   await app.register(transactionRoutes, { db });
   await app.register(classificationRoutes, { db });
   await app.register(ruleRoutes, { db });
+  await app.register(reviewRoutes, { db });
+  await app.register(ruleSuggestionRoutes, { db });
 
   return app;
 }

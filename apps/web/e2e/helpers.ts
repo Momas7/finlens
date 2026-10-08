@@ -27,3 +27,20 @@ export async function createCheckingAccount(page: Page, name = 'Inter', balance 
   await page.getByRole('button', { name: 'Salvar conta' }).click();
   await expect(page).toHaveURL(/\/painel\/contas$/);
 }
+
+/** Lança uma saída pela interface; com categoria, escolhe-a explicitamente. */
+export async function addExpense(
+  page: Page,
+  description: string,
+  amount: string,
+  category?: string,
+) {
+  await page.goto('/painel/transacoes/nova');
+  await page.getByRole('radio', { name: 'Saída' }).check();
+  await page.getByLabel('Valor').fill(amount);
+  await page.getByLabel('Descrição').fill(description);
+  if (category)
+    await page.getByLabel('Categoria', { exact: true }).selectOption({ label: category });
+  await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+  await expect(page).toHaveURL(/\/painel\/transacoes(\/[^/]+\/semelhantes.*)?$/);
+}

@@ -4,4 +4,5 @@ export * from './keywords';
 export * from './layers';
 export * from './merchants';
 export * from './normalize';
+export * from './suggest-rules';
 export * from './trigram';

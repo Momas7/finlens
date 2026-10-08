@@ -1,4 +1,10 @@
-import { TransactionCreate, TransactionQuery, TransactionUpdate, Uuid } from '@finlens/contracts';
+import {
+  ConfirmBatch,
+  TransactionCreate,
+  TransactionQuery,
+  TransactionUpdate,
+  Uuid,
+} from '@finlens/contracts';
 import { type Db, type Tx, transactions, withTenant } from '@finlens/db';
 import { statementMonth } from '@finlens/domain';
 import { eq } from 'drizzle-orm';
@@ -6,7 +12,9 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError, notFound } from '../../http/errors';
 import { findAccount } from '../accounts/repository';
 import { type CategoryDecision, categorize, recordFeedback } from './categorize';
+import { confirmTransactions } from './confirm';
 import { categoryExists, findTransaction, listTransactions, toTransactionDto } from './repository';
+import { findSimilar } from './similar';
 
 function transactionId(request: FastifyRequest): string {
   const parsed = Uuid.safeParse((request.params as { id?: string }).id);
@@ -42,6 +50,24 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
   app.get('/v1/transactions', auth, async (request) => {
     const query = TransactionQuery.parse(request.query);
     return withTenant(opts.db, request.tenant, (tx) => listTransactions(tx, query));
+  });
+
+  app.post('/v1/transactions/confirm', auth, async (request) => {
+    const input = ConfirmBatch.parse(request.body);
+    const confirmed = await withTenant(opts.db, request.tenant, (tx) =>
+      confirmTransactions(tx, request.tenant.workspaceId, input.ids, input.categoryId),
+    );
+    return { confirmed };
+  });
+
+  app.get('/v1/transactions/:id/similar', auth, async (request) => {
+    const id = transactionId(request);
+    const categoryId = Uuid.parse((request.query as { categoryId?: string }).categoryId);
+    return withTenant(opts.db, request.tenant, async (tx) => {
+      const ref = await findTransaction(tx, id);
+      if (!ref) throw notFound('Lançamento');
+      return findSimilar(tx, ref, categoryId);
+    });
   });
 
   app.get('/v1/transactions/:id', auth, async (request) => {

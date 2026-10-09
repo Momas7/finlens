@@ -61,6 +61,24 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('insights', async ({ page }) => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      test.skip(Number(today.slice(8)) < 2, 'precisa de dois dias no mês');
+      await signUp(page);
+      await createCheckingAccount(page);
+      for (const d of ['01', '02']) {
+        await addExpense(page, 'NETFLIX', '55,90', undefined, `${today.slice(0, 7)}-${d}`);
+      }
+      await page.goto('/painel');
+      await expect(page.getByRole('region', { name: 'O que mudou' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page), 'início').toEqual([]);
+      await page.goto('/painel/insights');
+      expect(await seriousViolations(page), 'página').toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

@@ -258,3 +258,16 @@ export const budgets = pgTable(
     check('budgets_amount_check', sql`${t.amountCents} is null or ${t.amountCents} > 0`),
   ],
 );
+
+/** Estado de cada insight já servido: quando apareceu pela primeira vez e se foi dispensado. */
+export const insightStates = pgTable(
+  'insight_states',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    dedupeKey: text().notNull(),
+    firstSeenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    dismissedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [unique('insight_states_workspace_key').on(t.workspaceId, t.dedupeKey)],
+);

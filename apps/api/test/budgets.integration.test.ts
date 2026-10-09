@@ -114,6 +114,13 @@ describe('/v1/budgets', () => {
     expect(item(await get(), 'Alimentação').limitCents).toBe('75000');
   });
 
+  it('sem ritmo com menos de 3 saídas no mês (pagamento único não é ritmo)', async () => {
+    const { add, put, get, item } = await setup();
+    await put('Moradia', '190000');
+    await add('-185000', 'Moradia › Aluguel e financiamento');
+    expect(item(await get(), 'Moradia').pace).toBeNull();
+  });
+
   it('remover vale a partir do mês corrente', async () => {
     const { who, ids, put, get, item } = await setup();
     await put('Alimentação', '75000');

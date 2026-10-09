@@ -1,5 +1,6 @@
 import type { MonthSummary } from '@finlens/contracts';
 import { deltaPoints, spentShare } from '@finlens/domain';
+import Link from 'next/link';
 import { Scale } from '@/components/ui/scale';
 import { formatCents } from '@/lib/money';
 import { monthName } from '@/lib/month-label';
@@ -26,6 +27,10 @@ export function Headline({ summary }: { summary: MonthSummary }) {
   const delta = deltaPoints(share, prevShare);
   const percent = share === null ? null : Math.round(share * 100);
   const comparison = delta === null ? null : comparisonText(summary, delta);
+  const { warning, over } = summary.budgetAlerts;
+  const alertText = [warning > 0 && `${warning} em atenção`, over > 0 && `${over} passou`]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <div className="space-y-5">
@@ -75,6 +80,17 @@ export function Headline({ summary }: { summary: MonthSummary }) {
             )}
           </p>
         </div>
+      )}
+      {alertText && (
+        <p className="text-[13px]">
+          <span className="text-ink-soft">Orçamentos: </span>
+          <Link
+            href="/painel/orcamentos"
+            className="font-medium text-mark underline underline-offset-2"
+          >
+            {alertText}
+          </Link>
+        </p>
       )}
     </div>
   );

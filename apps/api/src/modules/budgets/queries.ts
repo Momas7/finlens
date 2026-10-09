@@ -15,6 +15,8 @@ import { and, eq, isNull, lte } from 'drizzle-orm';
 import { activeMonths, rootTotals } from '../analytics/aggregate';
 
 const SUGGESTION_MONTHS = 6;
+/** Com poucas saídas (ex.: só o aluguel), projeção linear engana. */
+const PACE_MIN_EXPENSES = 3;
 
 /** Categorias principais de despesa ativas: as únicas que aceitam orçamento. */
 export function budgetableRoots(tx: Tx) {
@@ -77,8 +79,10 @@ export async function loadBudgetMonth(tx: Tx, month: Month, today: string): Prom
     isCurrent ? activeMonths(tx, window[0] as Month, window.at(-1) as Month) : new Set<Month>(),
   ]);
   const spent = new Map<string, Map<Month, bigint>>();
+  const expenseCount = new Map<string, number>();
   for (const r of totals) {
     if (!r.root) continue;
+    if (r.month === month) expenseCount.set(r.root, (expenseCount.get(r.root) ?? 0) + r.count);
     const byMonth = spent.get(r.root) ?? new Map<Month, bigint>();
     byMonth.set(r.month, (byMonth.get(r.month) ?? 0n) + r.expense);
     spent.set(r.root, byMonth);
@@ -91,7 +95,10 @@ export async function loadBudgetMonth(tx: Tx, month: Month, today: string): Prom
       const limit = limitFor(versions.get(root.id) ?? [], month);
       const state = limit === null ? null : budgetState(spentCents, limit);
       const share = limit === null ? null : Number(spentCents) / Number(limit);
-      const p = limit !== null && isCurrent ? pace(spentCents, limit, day, daysInMonth) : null;
+      const p =
+        limit !== null && isCurrent && (expenseCount.get(root.id) ?? 0) >= PACE_MIN_EXPENSES
+          ? pace(spentCents, limit, day, daysInMonth)
+          : null;
       const suggested =
         limit === null && isCurrent
           ? suggestBudget(usedMonths.map((m) => spent.get(root.id)?.get(m) ?? 0n))

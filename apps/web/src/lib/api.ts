@@ -28,7 +28,7 @@ export type ApiResult<T> =
 
 /** Escrita na API a partir de Server Actions. Erros 4xx voltam como dado para o formulário. */
 export async function apiSend<T = unknown>(
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
   schema?: ZodType<T>,

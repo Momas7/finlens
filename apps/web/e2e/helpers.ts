@@ -34,10 +34,12 @@ export async function addExpense(
   description: string,
   amount: string,
   category?: string,
+  date?: string,
 ) {
   await page.goto('/painel/transacoes/nova');
   await page.getByRole('radio', { name: 'Saída' }).check();
   await page.getByLabel('Valor').fill(amount);
+  if (date) await page.getByLabel('Data').fill(date);
   await page.getByLabel('Descrição').fill(description);
   if (category)
     await page.getByLabel('Categoria', { exact: true }).selectOption({ label: category });

@@ -84,8 +84,14 @@ export async function goalRoutes(app: FastifyInstance, opts: { db: Db }) {
     const id = goalId(request);
     const input = GoalUpdate.parse(request.body);
     const today = todayInSaoPaulo();
-    assertFutureDate(input.targetDate, today);
     return withTenant(opts.db, request.tenant, async (tx) => {
+      // Só valida a data quando ela muda: editar o nome de uma meta vencida não pode falhar.
+      const [stored] = await tx
+        .select({ targetDate: goals.targetDate })
+        .from(goals)
+        .where(and(eq(goals.id, id), isNull(goals.archivedAt)));
+      if (!stored) throw notFound('Meta');
+      if (input.targetDate !== stored.targetDate) assertFutureDate(input.targetDate, today);
       const updated = await tx
         .update(goals)
         .set({

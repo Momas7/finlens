@@ -33,7 +33,7 @@ function GoalCard({ goal }: { goal: Goal }) {
           {goal.name}
         </h2>
         {done ? (
-          <span className="rounded-[4px] bg-gain px-2 text-[13px] leading-6 font-medium text-page">
+          <span className="rounded-[4px] bg-gain px-2 text-[13px] leading-6 font-medium text-raised">
             Concluída
           </span>
         ) : (

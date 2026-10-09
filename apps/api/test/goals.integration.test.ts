@@ -1,3 +1,4 @@
+import { ensurePersonalWorkspace, goals, withTenant } from '@finlens/db';
 import { addMonths, monthsBetween, previousMonth, todayInSaoPaulo } from '@finlens/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp, type TestApp } from './helpers';
@@ -16,7 +17,8 @@ describe('/v1/goals', () => {
   let t: TestApp;
 
   async function setup() {
-    const who = t.as((await t.signUp()).cookie);
+    const signed = await t.signUp();
+    const who = t.as(signed.cookie);
     const account = async (type = 'savings', opening = '200000') =>
       (
         await who({
@@ -43,7 +45,10 @@ describe('/v1/goals', () => {
         url: '/v1/transactions',
         payload: { accountId: reserve, postedDate, amountCents, description: 'DEPOSITO RESERVA' },
       });
-    return { who, account, reserve, create, list, deposit };
+    const { id: workspaceId } = await ensurePersonalWorkspace(t.db, signed.userId);
+    const asOwner = <T>(fn: Parameters<typeof withTenant<T>>[2]) =>
+      withTenant(t.db, { userId: signed.userId, workspaceId }, fn);
+    return { who, account, reserve, create, list, deposit, asOwner };
   }
 
   beforeAll(async () => {
@@ -122,6 +127,25 @@ describe('/v1/goals', () => {
       requiredMonthlyCents: null,
       status: 'no_date',
     });
+  });
+
+  it('data que já passou: aporte nulo e editar sem mudar a data funciona', async () => {
+    const { who, reserve, create, list, asOwner } = await setup();
+    const id = (
+      await create({ name: 'Viagem', targetCents: '1000000', accountId: reserve, targetDate })
+    ).json().id;
+    const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    await asOwner((tx) => tx.update(goals).set({ targetDate: yesterday }));
+    expect((await list())[0]).toMatchObject({ targetDate: yesterday, requiredMonthlyCents: null });
+    const res = await who({
+      method: 'PATCH',
+      url: `/v1/goals/${id}`,
+      payload: { name: 'Viagem longa', targetCents: '1200000', targetDate: yesterday },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ name: 'Viagem longa', targetDate: yesterday });
   });
 
   it('arquivar libera a conta', async () => {

@@ -76,9 +76,8 @@ export async function loadGoals(tx: Tx, today: string, includeArchived = false):
       ? requiredMonthly(
           balance,
           goal.targetCents,
-          goal.targetDate && goal.targetDate < today && targetMonth < current
-            ? -1
-            : monthsBetween(current, targetMonth),
+          // Data já passada (mesmo dentro do mês corrente) não tem aporte possível.
+          goal.targetDate && goal.targetDate < today ? -1 : monthsBetween(current, targetMonth),
           rate,
         )
       : null;

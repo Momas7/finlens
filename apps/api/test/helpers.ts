@@ -15,11 +15,17 @@ export type TestApp = {
 
 let counter = 0;
 
-export async function createTestApp(): Promise<TestApp> {
+/** `env` sobrescreve variáveis (ex.: limite de cadastro para arquivos com muitos usuários). */
+export async function createTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const testDb = await createTestDatabase();
   const ownerDb = createDb(testDb.ownerUrl);
   const db = createDb(testDb.appUrl);
-  const config = loadConfig({ ...process.env, DATABASE_URL: testDb.appUrl, LOG_LEVEL: 'silent' });
+  const config = loadConfig({
+    ...process.env,
+    DATABASE_URL: testDb.appUrl,
+    LOG_LEVEL: 'silent',
+    ...env,
+  });
   const app = await buildApp({ config, db });
 
   return {

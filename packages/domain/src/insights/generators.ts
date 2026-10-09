@@ -183,12 +183,12 @@ export function budgetPace(ctx: InsightContext): InsightCandidate[] {
   const action = { label: 'Ver orçamento', href: '/painel/orcamentos' };
   const out: InsightCandidate[] = [];
   for (const b of ctx.budgets) {
-    const key = `budget_pace:${ctx.month}:${b.categoryId}`;
     if (b.state === 'over' && b.spentCents > b.limitCents) {
+      // Chave própria: dispensar a previsão não pode esconder o estouro.
       out.push({
         kind: 'budget_pace',
         severity: 'warning',
-        dedupeKey: key,
+        dedupeKey: `budget_over:${ctx.month}:${b.categoryId}`,
         title: `${b.label} passou do orçamento`,
         body: `${formatBRL(b.spentCents - b.limitCents)} acima do limite de ${formatBRL(b.limitCents)}.`,
         impactCents: b.spentCents - b.limitCents,
@@ -198,7 +198,7 @@ export function budgetPace(ctx: InsightContext): InsightCandidate[] {
       out.push({
         kind: 'budget_pace',
         severity: 'warning',
-        dedupeKey: key,
+        dedupeKey: `budget_pace:${ctx.month}:${b.categoryId}`,
         title: `${b.label} deve passar do orçamento`,
         body: `No ritmo atual, passa do limite por volta do dia ${b.overOnDay} e fecha em ${formatBRL(b.projectedCents)}.`,
         impactCents: b.projectedCents - b.limitCents,
@@ -221,6 +221,11 @@ export function savings(ctx: InsightContext): InsightCandidate[] {
     action: { label: 'Ver mês', href: `/painel?mes=${closed}` },
   };
   const net = last.incomeCents - last.expenseCents;
+  // Falta só faz sentido com uso contínuo e renda lançada (quem só acompanha o cartão tem
+  // como "entrada" apenas estornos).
+  const continuous =
+    ctx.activeMonths.includes(closed) && ctx.activeMonths.includes(previousMonth(closed));
+  if (net < 0n && (!continuous || last.incomeCents * 2n < last.expenseCents)) return [];
   if (net < 0n) {
     return [
       {

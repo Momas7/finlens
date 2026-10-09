@@ -58,7 +58,8 @@ describe('/v1/insights', () => {
   }
 
   beforeAll(async () => {
-    t = await createTestApp();
+    // Um usuário por cenário: passa do limite padrão de 10 cadastros por minuto.
+    t = await createTestApp({ AUTH_RATE_LIMIT_PER_MINUTE: '100' });
   });
   afterAll(async () => t?.close());
 
@@ -146,6 +147,50 @@ describe('/v1/insights', () => {
     expect(await b.list()).toEqual([]);
     await b.dismiss(item?.id as string);
     expect(await a.list()).toHaveLength(1);
+  });
+
+  it('categoria acima do normal', async () => {
+    const { add, list } = await setup();
+    for (let n = 1; n <= 3; n++) {
+      await add('-40000', 'MERCADO X', `${monthsAgo(n)}-01`, 'Alimentação › Mercado');
+    }
+    await add('-60000', 'MERCADO X', d(1), 'Alimentação › Mercado');
+    expect((await list()).find((i) => i.kind === 'category_spike')).toMatchObject({
+      severity: 'warning',
+      impactCents: '20000',
+    });
+  });
+
+  it('pequenas compras', async () => {
+    const { add, list } = await setup();
+    for (const letter of 'ABCDEFGHIJ') await add('-1500', `LOJA ${letter}${letter}`, d(1));
+    expect((await list()).find((i) => i.kind === 'small_purchases')).toMatchObject({
+      severity: 'info',
+      impactCents: '15000',
+    });
+  });
+
+  it('orçamento estourado', async () => {
+    const { who, add, list } = await setup();
+    const tree: Node[] = (await who({ method: 'GET', url: '/v1/categories' })).json();
+    const leisure = tree.find((n) => n.name === 'Lazer')?.id as string;
+    await who({ method: 'PUT', url: `/v1/budgets/${leisure}`, payload: { amountCents: '15000' } });
+    await add('-18000', 'CINEMA', today, 'Lazer › Cinema e eventos');
+    expect((await list()).find((i) => i.kind === 'budget_pace')).toMatchObject({
+      title: 'Lazer passou do orçamento',
+      impactCents: '3000',
+    });
+  });
+
+  it('faltou dinheiro no mês fechado', async () => {
+    const { add, list } = await setup();
+    await add('-1000', 'PADARIA', `${monthsAgo(2)}-01`);
+    await add('500000', 'SALARIO', `${monthsAgo(1)}-01`, 'Receitas › Salário');
+    await add('-532000', 'ALUGUEL', `${monthsAgo(1)}-02`, 'Moradia › Aluguel e financiamento');
+    expect((await list()).find((i) => i.kind === 'savings')).toMatchObject({
+      severity: 'warning',
+      impactCents: '32000',
+    });
   });
 
   it('limit inválido', async () => {

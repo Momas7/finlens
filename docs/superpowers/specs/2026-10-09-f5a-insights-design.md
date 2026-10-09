@@ -117,12 +117,12 @@ Todos olham o mês corrente. Os valores aparecem formatados em reais (`formatBRL
   - impacto: `projeção − limite`.
 - **Severidade:** `warning`.
 - **Ação:** "Ver orçamento", que abre `/painel/orcamentos`.
-- **Chave:** `budget_pace:{mês}:{categoryId}`.
+- **Chave:** `budget_over:{mês}:{categoryId}` quando passou e `budget_pace:{mês}:{categoryId}` na previsão; dispensar a previsão não esconde o estouro.
 
 ### 7. Taxa de poupança (`savings`)
 
 - **Mês analisado:** o último mês fechado (`m = previousMonth(month)`). Sem entradas, não dispara.
-- **Se saiu mais do que entrou:**
+- **Se saiu mais do que entrou** (só com uso contínuo, `m` e o mês anterior em `activeMonths`, e entrada de pelo menos metade das saídas; quem só lança cartão tem como entrada apenas estornos):
   - título "Faltou dinheiro em {mês}";
   - corpo "Em {mês} saiu R$ X a mais do que entrou.";
   - severidade `warning`; impacto: o valor que faltou.

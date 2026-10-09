@@ -220,7 +220,11 @@ describe('budgetPace', () => {
       budgetPace(
         ctx({ budgets: [{ ...base, limitCents: 15000n, spentCents: 18000n, state: 'over' }] }),
       )[0],
-    ).toMatchObject({ title: 'Lazer passou do orçamento', impactCents: 3000n });
+    ).toMatchObject({
+      title: 'Lazer passou do orçamento',
+      impactCents: 3000n,
+      dedupeKey: 'budget_over:2026-10:lz',
+    });
     expect(
       budgetPace(
         ctx({
@@ -239,6 +243,7 @@ describe('budgetPace', () => {
     ).toMatchObject({
       title: 'Lazer deve passar do orçamento',
       impactCents: 12000n,
+      dedupeKey: 'budget_pace:2026-10:lz',
       body: 'No ritmo atual, passa do limite por volta do dia 23 e fecha em R$ 620,00.',
     });
     expect(
@@ -252,15 +257,16 @@ describe('budgetPace', () => {
 describe('savings', () => {
   const totals = (rows: [string, bigint, bigint][]) =>
     rows.map(([month, incomeCents, expenseCents]) => ({ month, incomeCents, expenseCents }));
+  const used = ['2026-08', '2026-09'];
   it('faltou dinheiro no último mês fechado', () => {
-    expect(savings(ctx({ monthTotals: totals([['2026-09', 500000n, 532000n]]) }))[0]).toMatchObject(
-      {
-        severity: 'warning',
-        impactCents: 32000n,
-        title: 'Faltou dinheiro em setembro',
-        dedupeKey: 'savings:2026-09',
-      },
-    );
+    expect(
+      savings(ctx({ activeMonths: used, monthTotals: totals([['2026-09', 500000n, 532000n]]) }))[0],
+    ).toMatchObject({
+      severity: 'warning',
+      impactCents: 32000n,
+      title: 'Faltou dinheiro em setembro',
+      dedupeKey: 'savings:2026-09',
+    });
   });
   it('taxa caiu 10 p.p. em relação à mediana', () => {
     const out = savings(
@@ -278,6 +284,13 @@ describe('savings', () => {
       impactCents: 15000n,
       body: 'Sobrou 10% da renda em setembro, abaixo dos 25% de costume.',
     });
+  });
+  it('não acusa falta sem uso contínuo ou com entrada irrisória (só cartão, estorno)', () => {
+    const deficit = totals([['2026-09', 500000n, 532000n]]);
+    expect(savings(ctx({ activeMonths: ['2026-09'], monthTotals: deficit }))).toEqual([]);
+    expect(
+      savings(ctx({ activeMonths: used, monthTotals: totals([['2026-09', 5000n, 300000n]]) })),
+    ).toEqual([]);
   });
   it('sem entrada no mês fechado, nada', () =>
     expect(savings(ctx({ monthTotals: totals([['2026-09', 0n, 5000n]]) }))).toEqual([]));

@@ -55,7 +55,8 @@ test('passar do limite, ver na Início e alterar', async ({ page }) => {
   );
 
   await page.goto('/painel');
-  await expect(page.getByRole('link', { name: '1 passou' })).toBeVisible();
+  const alert = page.getByRole('link', { name: '1 atingiu o limite' });
+  await expect(alert).toHaveAttribute('href', /\/painel\/orcamentos\?mes=\d{4}-\d{2}$/);
   await expect(page.getByRole('region', { name: 'Para onde foi' })).toContainText(
     'Passou do orçamento',
   );

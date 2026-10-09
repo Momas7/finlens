@@ -4,6 +4,7 @@ import { MonthNav, monthFromParam } from '@/components/month-nav';
 import { Panel } from '@/components/ui/panel';
 import { Scale } from '@/components/ui/scale';
 import { apiFetch } from '@/lib/api';
+import { budgetPercent } from '@/lib/budget-percent';
 import { centsToInput, formatCents } from '@/lib/money';
 import { monthName } from '@/lib/month-label';
 import { ApplySuggestions, DefineBudget, EditBudget, RemoveBudget } from './budget-forms';
@@ -11,7 +12,7 @@ import { ApplySuggestions, DefineBudget, EditBudget, RemoveBudget } from './budg
 function stateText(item: BudgetItem): string {
   const spent = BigInt(item.spentCents);
   const limit = BigInt(item.limitCents as string);
-  const percent = Math.round((item.share ?? 0) * 100);
+  const percent = budgetPercent(item.share);
   if (item.state === 'over') {
     return spent === limit
       ? '100% usado, limite atingido'
@@ -34,7 +35,7 @@ function paceText(item: BudgetItem): string | null {
 
 function BudgetRow({ item, editable }: { item: BudgetItem; editable: boolean }) {
   const limit = item.limitCents as string;
-  const percent = Math.round((item.share ?? 0) * 100);
+  const percent = budgetPercent(item.share);
   const pace = paceText(item);
   return (
     <li className="space-y-2 py-4">

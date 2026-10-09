@@ -116,7 +116,7 @@ Erros comuns às rotas:
   - em "Para onde foi", a categoria com limite ganha um traço vertical na posição do limite, na mesma escala da barra (ou no fim, se o limite for maior que a maior barra);
   - o nome acessível inclui "de {limite}";
   - quem passou mostra "Passou do orçamento" em vermelho;
-  - abaixo da régua de renda, quando `warning + over > 0`, aparece o link "{n} em atenção, {m} passou" (só os termos maiores que zero) para `/painel/orcamentos`.
+  - abaixo da régua de renda, quando `warning + over > 0`, aparece o link "{n} em atenção, {m} atingiu o limite" (só os termos maiores que zero) para `/painel/orcamentos`.
 
 ## Testes
 

@@ -28,7 +28,7 @@ export function Headline({ summary }: { summary: MonthSummary }) {
   const percent = share === null ? null : Math.round(share * 100);
   const comparison = delta === null ? null : comparisonText(summary, delta);
   const { warning, over } = summary.budgetAlerts;
-  const alertText = [warning > 0 && `${warning} em atenção`, over > 0 && `${over} passou`]
+  const alertText = [warning > 0 && `${warning} em atenção`, over > 0 && `${over} atingiu o limite`]
     .filter(Boolean)
     .join(', ');
 
@@ -85,7 +85,7 @@ export function Headline({ summary }: { summary: MonthSummary }) {
         <p className="text-[13px]">
           <span className="text-ink-soft">Orçamentos: </span>
           <Link
-            href="/painel/orcamentos"
+            href={`/painel/orcamentos?mes=${summary.month}`}
             className="font-medium text-mark underline underline-offset-2"
           >
             {alertText}

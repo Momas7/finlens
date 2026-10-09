@@ -39,11 +39,14 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
             const href = uncategorized
               ? '/painel/revisao'
               : `/painel/transacoes?categoryId=${c.categoryId}&from=${from}&to=${to}`;
-            const over = c.limitCents !== null && cents > BigInt(c.limitCents);
+            const limit = c.limitCents === null ? null : BigInt(c.limitCents);
+            const over = limit !== null && cents > limit;
+            const atLimit = limit !== null && cents === limit;
             const name = [
               `${c.label}, ${formatCents(c.expenseCents)}`,
               c.limitCents && `de ${formatCents(c.limitCents)}`,
               over && 'passou do orçamento',
+              atLimit && 'limite atingido',
               pending && `${summary.pendingReview} a revisar`,
             ]
               .filter(Boolean)
@@ -62,9 +65,9 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
                         {summary.pendingReview} a revisar
                       </span>
                     )}
-                    {over && (
+                    {(over || atLimit) && (
                       <span className="block text-[12px] font-medium text-mark">
-                        Passou do orçamento
+                        {over ? 'Passou do orçamento' : 'Limite atingido'}
                       </span>
                     )}
                   </span>

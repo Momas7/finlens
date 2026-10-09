@@ -5,5 +5,6 @@ export * from './budgets';
 export * from './categories/default-categories';
 export * from './classification';
 export * from './dates/today';
+export * from './goals';
 export * from './insights';
 export * from './money/money';

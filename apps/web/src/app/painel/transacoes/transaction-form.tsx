@@ -7,15 +7,11 @@ import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { accountLabel } from '@/lib/accounts';
 import type { CategoryOption } from '@/lib/categories';
+import { centsToInput } from '@/lib/money';
 import { type FormState, saveTransaction } from './actions';
 import { CategorySuggestion } from './category-suggestion';
 
 type Kind = 'expense' | 'income';
-
-function absToInput(cents: string) {
-  const abs = cents.replace('-', '').padStart(3, '0');
-  return `${Number(abs.slice(0, -2)).toLocaleString('pt-BR')},${abs.slice(-2)}`;
-}
 
 export function TransactionForm({
   accounts,
@@ -38,7 +34,7 @@ export function TransactionForm({
   const errors = state.fieldErrors ?? {};
   const activeAccounts = accounts.filter((a) => !a.archived || a.id === transaction?.accountId);
   const [description, setDescription] = useState(transaction?.description ?? '');
-  const [amount, setAmount] = useState(transaction ? absToInput(transaction.amountCents) : '');
+  const [amount, setAmount] = useState(transaction ? centsToInput(transaction.amountCents) : '');
   const [accountId, setAccountId] = useState(transaction?.accountId ?? activeAccounts[0]?.id ?? '');
   // Campos não controlados: o que a pessoa digitar antes da hidratação não é sobrescrito.
   // O estado abaixo só alimenta a sugestão.

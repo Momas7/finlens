@@ -80,9 +80,27 @@ describe('/v1/analytics/month', () => {
       netCents: '482650',
     });
     expect(body.categories).toEqual([
-      { categoryId: ids.Moradia, label: 'Moradia', expenseCents: '185000', count: 1 },
-      { categoryId: ids.Alimentação, label: 'Alimentação', expenseCents: '42350', count: 1 },
-      { categoryId: null, label: 'Sem categoria', expenseCents: '10000', count: 1 },
+      {
+        categoryId: ids.Moradia,
+        label: 'Moradia',
+        expenseCents: '185000',
+        count: 1,
+        limitCents: null,
+      },
+      {
+        categoryId: ids.Alimentação,
+        label: 'Alimentação',
+        expenseCents: '42350',
+        count: 1,
+        limitCents: null,
+      },
+      {
+        categoryId: null,
+        label: 'Sem categoria',
+        expenseCents: '10000',
+        count: 1,
+        limitCents: null,
+      },
     ]);
   });
 
@@ -96,7 +114,13 @@ describe('/v1/analytics/month', () => {
     expect(body.incomeCents).toBe('5000');
     expect(body.expenseCents).toBe('5000');
     expect(body.categories).toEqual([
-      { categoryId: ids.Alimentação, label: 'Alimentação', expenseCents: '5000', count: 2 },
+      {
+        categoryId: ids.Alimentação,
+        label: 'Alimentação',
+        expenseCents: '5000',
+        count: 2,
+        limitCents: null,
+      },
     ]);
   });
 

@@ -61,6 +61,20 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('/painel/orcamentos', async ({ page }) => {
+      await signUp(page);
+      await createCheckingAccount(page);
+      await page.goto('/painel/orcamentos');
+      expect(await seriousViolations(page), 'vazia').toEqual([]);
+      await page.getByLabel('Limite mensal para Alimentação').fill('100,00');
+      await page.getByRole('button', { name: 'Definir orçamento de Alimentação' }).click();
+      await addExpense(page, 'MERCADO', '85,00', 'Alimentação › Mercado');
+      await page.goto('/painel/orcamentos');
+      await expect(page.getByRole('meter', { name: 'Orçamento de Alimentação' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page), 'com orçamento').toEqual([]);
+    });
+
     test('/painel/revisao', async ({ page }) => {
       await signUp(page);
       await page.goto('/painel/revisao');

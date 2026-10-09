@@ -24,3 +24,9 @@ export function parseSignedInput(input: string): string | null {
     return null;
   }
 }
+
+/** Centavos para o formato do campo de valor: "65000" -> "650,00". */
+export function centsToInput(cents: string): string {
+  const abs = cents.replace('-', '').padStart(3, '0');
+  return `${Number(abs.slice(0, -2)).toLocaleString('pt-BR')},${abs.slice(-2)}`;
+}

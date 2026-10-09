@@ -1,12 +1,12 @@
 import { AccountList, MonthSummary } from '@finlens/contracts';
-import { nextMonth, parseMonth, previousMonth, todayInSaoPaulo } from '@finlens/domain';
-import Link from 'next/link';
+import { parseMonth, todayInSaoPaulo } from '@finlens/domain';
 import { LogoMark } from '@/components/logo';
+import { MonthNav, monthFromParam } from '@/components/month-nav';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
 import { apiFetch, UnauthorizedError } from '@/lib/api';
 import { getMe } from '@/lib/me';
-import { capitalize, monthLabel, monthName } from '@/lib/month-label';
+import { monthName } from '@/lib/month-label';
 import { Headline } from './month-summary/headline';
 import { HistoryChart } from './month-summary/history-chart';
 import { WhereItWent } from './month-summary/where-it-went';
@@ -43,9 +43,7 @@ function Invite({ hasAccounts }: { hasAccounts: boolean }) {
 export default async function PainelPage({ searchParams }: PageProps<'/painel'>) {
   const params = await searchParams;
   const current = todayInSaoPaulo().slice(0, 7);
-  const requested = typeof params.mes === 'string' ? parseMonth(params.mes) : null;
-  const invalid = params.mes !== undefined && (requested === null || requested > current);
-  const month = !invalid && requested ? requested : current;
+  const { month, invalid } = monthFromParam(params.mes, current, parseMonth);
 
   const [me, accounts, summary] = await Promise.all([
     getMe(),
@@ -80,25 +78,7 @@ export default async function PainelPage({ searchParams }: PageProps<'/painel'>)
         <Invite hasAccounts={hasAccounts} />
       ) : (
         <>
-          <nav aria-label="Meses" className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <Link
-              href={`/painel?mes=${previousMonth(month)}`}
-              className="justify-self-start text-[15px] text-ink-soft hover:text-ink"
-            >
-              ‹ {capitalize(monthName(previousMonth(month)))}
-            </Link>
-            <p className="text-center text-[18px] font-semibold">{capitalize(monthLabel(month))}</p>
-            {month < current ? (
-              <Link
-                href={`/painel?mes=${nextMonth(month)}`}
-                className="justify-self-end text-[15px] text-ink-soft hover:text-ink"
-              >
-                {capitalize(monthName(nextMonth(month)))} ›
-              </Link>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-          </nav>
+          <MonthNav month={month} current={current} basePath="/painel" />
           {summary === null ? (
             <Panel className="p-6">
               <p className="text-ink-soft">Não foi possível carregar o resumo agora.</p>

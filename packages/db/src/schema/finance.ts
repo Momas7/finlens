@@ -228,3 +228,33 @@ export const ruleSuggestionDismissals = pgTable(
     unique('rule_suggestion_dismissals_workspace_suggestion_key').on(t.workspaceId, t.suggestionId),
   ],
 );
+
+/**
+ * Orçamento mensal por categoria principal, versionado por mês: o limite de um mês é a versão
+ * mais recente com início até ele. `amountCents` nulo = sem orçamento a partir daquele mês.
+ */
+export const budgets = pgTable(
+  'budgets',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    categoryId: uuid().notNull(),
+    effectiveFrom: date({ mode: 'string' }).notNull(),
+    amountCents: bigint({ mode: 'bigint' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    foreignKey({
+      name: 'budgets_category_fk',
+      columns: [t.workspaceId, t.categoryId],
+      foreignColumns: [categories.workspaceId, categories.id],
+    }),
+    unique('budgets_workspace_category_month_key').on(t.workspaceId, t.categoryId, t.effectiveFrom),
+    check('budgets_month_start_check', sql`extract(day from ${t.effectiveFrom}) = 1`),
+    check('budgets_amount_check', sql`${t.amountCents} is null or ${t.amountCents} > 0`),
+  ],
+);

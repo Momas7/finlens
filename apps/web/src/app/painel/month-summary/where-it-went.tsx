@@ -12,7 +12,14 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
   const top = [...categorized.slice(0, TOP), ...(uncategorizedRow ? [uncategorizedRow] : [])];
   const rest = categorized.slice(TOP);
   const restTotal = rest.reduce((s, c) => s + BigInt(c.expenseCents), 0n);
-  const max = top.reduce((m, c) => (BigInt(c.expenseCents) > m ? BigInt(c.expenseCents) : m), 1n);
+  // A escala acomoda barras e limites, para o traço do orçamento ficar na mesma régua.
+  const max = top.reduce((m, c) => {
+    const biggest =
+      c.limitCents && BigInt(c.limitCents) > BigInt(c.expenseCents)
+        ? BigInt(c.limitCents)
+        : BigInt(c.expenseCents);
+    return biggest > m ? biggest : m;
+  }, 1n);
   const { from, to } = monthRange(summary.month);
   const width = (cents: bigint) => `${Math.max(1, Number((cents * 1000n) / max) / 10)}%`;
 
@@ -32,7 +39,18 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
             const href = uncategorized
               ? '/painel/revisao'
               : `/painel/transacoes?categoryId=${c.categoryId}&from=${from}&to=${to}`;
-            const name = `${c.label}, ${formatCents(c.expenseCents)}${pending ? `, ${summary.pendingReview} a revisar` : ''}`;
+            const limit = c.limitCents === null ? null : BigInt(c.limitCents);
+            const over = limit !== null && cents > limit;
+            const atLimit = limit !== null && cents === limit;
+            const name = [
+              `${c.label}, ${formatCents(c.expenseCents)}`,
+              c.limitCents && `de ${formatCents(c.limitCents)}`,
+              over && 'passou do orçamento',
+              atLimit && 'limite atingido',
+              pending && `${summary.pendingReview} a revisar`,
+            ]
+              .filter(Boolean)
+              .join(', ');
             return (
               <li key={c.categoryId ?? 'none'}>
                 <Link
@@ -47,6 +65,11 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
                         {summary.pendingReview} a revisar
                       </span>
                     )}
+                    {(over || atLimit) && (
+                      <span className="block text-[12px] font-medium text-mark">
+                        {over ? 'Passou do orçamento' : 'Limite atingido'}
+                      </span>
+                    )}
                   </span>
                   <span className="figure text-right text-[15px] sm:col-start-3 sm:row-start-1">
                     {formatCents(c.expenseCents)}
@@ -55,10 +78,18 @@ export function WhereItWent({ summary }: { summary: MonthSummary }) {
                     className="col-span-2 h-2 border-b border-scale sm:col-span-1 sm:col-start-2 sm:row-start-1"
                     aria-hidden="true"
                   >
-                    <span
-                      className={`block h-2 ${uncategorized ? 'bg-scale' : 'bg-tape'}`}
-                      style={{ width: width(cents) }}
-                    />
+                    <span className="relative block h-2">
+                      <span
+                        className={`absolute inset-y-0 left-0 ${over ? 'bg-mark' : uncategorized ? 'bg-scale' : 'bg-tape'}`}
+                        style={{ width: width(cents) }}
+                      />
+                      {c.limitCents && (
+                        <span
+                          className="absolute -top-1 h-4 w-0.5 -translate-x-1/2 bg-ink"
+                          style={{ left: width(BigInt(c.limitCents)) }}
+                        />
+                      )}
+                    </span>
                   </span>
                 </Link>
               </li>

@@ -44,3 +44,14 @@ export async function addExpense(
   await page.getByRole('button', { name: 'Salvar lançamento' }).click();
   await expect(page).toHaveURL(/\/painel\/transacoes(\/[^/]+\/semelhantes.*)?$/);
 }
+
+/** Lança uma entrada pela interface, com categoria escolhida. */
+export async function addIncome(page: Page, description: string, amount: string, category: string) {
+  await page.goto('/painel/transacoes/nova');
+  await page.getByRole('radio', { name: 'Entrada' }).check();
+  await page.getByLabel('Valor').fill(amount);
+  await page.getByLabel('Descrição').fill(description);
+  await page.getByLabel('Categoria', { exact: true }).selectOption({ label: category });
+  await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+  await expect(page).toHaveURL(/\/painel\/transacoes$/);
+}

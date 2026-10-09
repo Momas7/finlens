@@ -1,6 +1,6 @@
 import type { Transaction, TransactionQuery } from '@finlens/contracts';
 import { categories, type Tx, transactions } from '@finlens/db';
-import { and, desc, eq, gte, ilike, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { ApiError } from '../../http/errors';
 import { decodeCursor, encodeCursor } from './cursor';
 
@@ -35,7 +35,18 @@ export const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${
 export async function listTransactions(tx: Tx, query: TransactionQuery) {
   const filters: (SQL | undefined)[] = [
     query.accountId ? eq(transactions.accountId, query.accountId) : undefined,
-    query.categoryId ? eq(transactions.categoryId, query.categoryId) : undefined,
+    // Categoria raiz inclui as filhas.
+    query.categoryId
+      ? inArray(
+          transactions.categoryId,
+          tx
+            .select({ id: categories.id })
+            .from(categories)
+            .where(
+              or(eq(categories.id, query.categoryId), eq(categories.parentId, query.categoryId)),
+            ),
+        )
+      : undefined,
     query.from ? gte(transactions.postedDate, query.from) : undefined,
     query.to ? lte(transactions.postedDate, query.to) : undefined,
     query.q ? ilike(transactions.description, `%${escapeLike(query.q)}%`) : undefined,

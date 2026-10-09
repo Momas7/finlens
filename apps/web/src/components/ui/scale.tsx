@@ -5,6 +5,8 @@ type ScaleProps = {
   max: number;
   limit?: number;
   ticks?: number;
+  /** Marca de comparação (ex.: mesmo ponto do mês passado); a leitura vai no `valueText`. */
+  reference?: number;
   /** Nome acessível da medida (ex.: "Orçamento de alimentação"). */
   label: string;
   /** Leitura acessível do valor (ex.: "R$ 612 de R$ 750"). */
@@ -13,8 +15,17 @@ type ScaleProps = {
 };
 
 /** Régua graduada: elemento-assinatura do Finlens para qualquer medida em relação a um limite. */
-export function Scale({ value, max, limit, ticks, label, valueText, className = '' }: ScaleProps) {
-  const g = scaleGeometry({ value, max, limit, ticks });
+export function Scale({
+  value,
+  max,
+  limit,
+  ticks,
+  reference,
+  label,
+  valueText,
+  className = '',
+}: ScaleProps) {
+  const g = scaleGeometry({ value, max, limit, ticks, reference });
   return (
     // biome-ignore lint/a11y/useSemanticElements: <meter> nativo não aceita a régua desenhada; role=meter mantém a semântica
     <div
@@ -79,6 +90,17 @@ export function Scale({ value, max, limit, ticks, label, valueText, className = 
           style={{ left: `${g.limitPct}%` }}
           aria-hidden="true"
         />
+      )}
+      {g.referencePct !== null && (
+        // Referência: traço fino com um triângulo acima, distinto do marcador do valor.
+        <span
+          className="absolute -top-2.5 h-[1.375rem] -translate-x-1/2"
+          style={{ left: `clamp(4px, ${g.referencePct}%, calc(100% - 4px))` }}
+          aria-hidden="true"
+        >
+          <span className="absolute top-0 left-1/2 -translate-x-1/2 border-x-4 border-t-[5px] border-x-transparent border-t-ink-soft" />
+          <span className="absolute top-1 bottom-0 left-1/2 w-px -translate-x-1/2 bg-ink-soft" />
+        </span>
       )}
       <span
         className="absolute -top-0.5 h-4 w-0.5 -translate-x-1/2 bg-ink"

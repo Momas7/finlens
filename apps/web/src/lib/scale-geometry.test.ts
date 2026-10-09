@@ -50,4 +50,21 @@ describe('scaleGeometry', () => {
 
   it('traços', () =>
     expect(scaleGeometry({ value: 1, max: 4, ticks: 4 }).tickPcts).toEqual([0, 25, 50, 75, 100]));
+
+  it('referência fica no eixo e some sem valor', () => {
+    expect(scaleGeometry({ value: 67, max: 100, reference: 58 }).referencePct).toBe(58);
+    expect(scaleGeometry({ value: 150, max: 100, reference: 58 }).referencePct).toBe(38.67);
+    // Referência acima do máximo estende a régua, como o valor.
+    expect(scaleGeometry({ value: 50, max: 100, reference: 300 })).toMatchObject({
+      axisMax: 300,
+      referencePct: 100,
+      markerPct: 16.67,
+    });
+    expect(scaleGeometry({ value: 60, max: 100, limit: 100, reference: 140 })).toMatchObject({
+      referencePct: 100,
+      markerPct: 42.86,
+      limitPct: 71.43,
+    });
+    expect(scaleGeometry({ value: 50, max: 100 }).referencePct).toBeNull();
+  });
 });

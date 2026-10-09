@@ -47,7 +47,7 @@ Todos olham o mês corrente. Os valores aparecem formatados em reais (`formatBRL
 
 - **Gasto atual:** saídas da categoria principal com dia do mês até `day`.
 - **Referência:** mediana do mesmo recorte (dia do mês até `min(day, último dia daquele mês)`) nos meses de `activeMonths`. Exige 3 meses ou mais.
-- **Dispara quando:** `atual ≥ mediana × 1,3` e `atual − mediana ≥ R$ 100`.
+- **Dispara quando:** `atual ≥ mediana × 1,3` e `atual − mediana ≥ R$ 100`. Mediana zero não dispara: a categoria é nova ou o gasto costuma vir depois desse dia.
 - **Severidade:** `warning`. Impacto: `atual − mediana`.
 - **Texto:**
   - título "{Categoria} acima do normal";

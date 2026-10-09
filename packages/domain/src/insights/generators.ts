@@ -52,6 +52,8 @@ export function categorySpike(ctx: InsightContext): InsightCandidate[] {
   for (const [root, label] of roots) {
     const current = upTo(root, ctx.month);
     const reference = median(ctx.activeMonths.map((m) => upTo(root, m)));
+    // Sem gasto no recorte de referência não há "normal" (categoria nova ou gasto que costuma vir depois).
+    if (reference === 0n) continue;
     const gap = current - reference;
     if (current * 10n < reference * SPIKE_RATIO_X10 || gap < SPIKE_MIN) continue;
     out.push({

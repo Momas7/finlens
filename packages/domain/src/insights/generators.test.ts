@@ -56,6 +56,20 @@ describe('categorySpike', () => {
     ];
     expect(categorySpike(ctx({ activeMonths: active3, expenses: small }))).toEqual([]);
   });
+  it('sem gasto no recorte de referência, não há "normal" para comparar', () => {
+    const later = [
+      e('j', '2026-07-25', 40000n, food),
+      e('a', '2026-08-25', 40000n, food),
+      e('s', '2026-09-25', 40000n, food),
+    ];
+    expect(
+      categorySpike(ctx({ activeMonths: active3, expenses: [...later, e('o', '2026-10-05', 60000n, food)] })),
+    ).toEqual([]);
+    expect(
+      categorySpike(ctx({ activeMonths: active3, expenses: [e('o', '2026-10-05', 60000n, food)] })),
+    ).toEqual([]);
+  });
+
   it('dia 31 recorta no último dia dos meses curtos', () => {
     const out = categorySpike(
       ctx({

@@ -24,6 +24,8 @@ for (const theme of ['light', 'dark'] as const) {
     }
 
     test('/painel', async ({ page }) => {
+      // Percorre seis telas com axe e cria conta: passa de 30s com a suíte inteira em paralelo.
+      test.setTimeout(60_000);
       await signUp(page);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page)).toEqual([]);

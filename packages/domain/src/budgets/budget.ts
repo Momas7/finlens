@@ -54,7 +54,7 @@ export function pace(
   };
 }
 
-/** Mediana dos meses informados, arredondada para cima a R$ 50; null com menos de 3 meses. */
+/** Mediana dos meses, arredondada para cima a R$ 50; null com menos de 3 meses ou mediana zero. */
 export function suggestBudget(monthlySpentCents: bigint[]): bigint | null {
   if (monthlySpentCents.length < MIN_MONTHS) return null;
   const sorted = [...monthlySpentCents].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
@@ -63,6 +63,8 @@ export function suggestBudget(monthlySpentCents: bigint[]): bigint | null {
     sorted.length % 2 === 1
       ? (sorted[mid] as bigint)
       : ((sorted[mid - 1] as bigint) + (sorted[mid] as bigint) + 1n) / 2n;
+  // Mediana zero: a categoria não costuma ter gasto; sugerir R$ 50 seria ruído.
+  if (median === 0n) return null;
   const rounded = ((median + ROUND_TO - 1n) / ROUND_TO) * ROUND_TO;
   return rounded < ROUND_TO ? ROUND_TO : rounded;
 }

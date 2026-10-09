@@ -54,5 +54,7 @@ describe('suggestBudget', () => {
     expect(suggestBudget([60000n, 0n, 72000n])).toBe(60000n));
   it('mediana par arredonda para cima em R$ 50', () =>
     expect(suggestBudget([61000n, 70000n, 52000n, 90000n])).toBe(70000n));
-  it('mínimo de R$ 50', () => expect(suggestBudget([100n, 0n, 0n])).toBe(5000n));
+  it('mínimo de R$ 50', () => expect(suggestBudget([100n, 100n, 0n])).toBe(5000n));
+  it('categoria que não costuma ter gasto não recebe sugestão', () =>
+    expect(suggestBudget([100n, 0n, 0n])).toBeNull());
 });

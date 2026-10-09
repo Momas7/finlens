@@ -33,6 +33,7 @@ Sucesso:
   - considera os 6 meses fechados antes do mês corrente, mas só os meses em que o workspace lançou ao menos uma transação;
   - em cada um desses meses, toma o gasto da categoria (zero se não houve gasto);
   - com 3 meses ou mais, o valor é a mediana arredondada para cima ao múltiplo de R$ 50 (5.000 centavos), com mínimo de R$ 50;
+  - se a mediana for zero (a categoria não costuma ter gasto), não há sugestão;
   - com menos de 3 meses, não há sugestão (`null`).
 - **Alertas:** só visuais. Não há notificações.
 

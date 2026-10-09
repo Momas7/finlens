@@ -11,6 +11,7 @@ export const MonthCategory = z.object({
   label: z.string(),
   expenseCents: TotalCents,
   count: z.number().int(),
+  limitCents: TotalCents.nullable(),
 });
 export type MonthCategory = z.infer<typeof MonthCategory>;
 
@@ -29,6 +30,7 @@ export const MonthSummary = z.object({
   }),
   categories: z.array(MonthCategory),
   pendingReview: z.number().int(),
+  budgetAlerts: z.object({ warning: z.number().int(), over: z.number().int() }),
   history: z.array(
     z.object({ month: MonthText, incomeCents: TotalCents, expenseCents: TotalCents }),
   ),

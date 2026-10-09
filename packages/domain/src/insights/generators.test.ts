@@ -63,7 +63,9 @@ describe('categorySpike', () => {
       e('s', '2026-09-25', 40000n, food),
     ];
     expect(
-      categorySpike(ctx({ activeMonths: active3, expenses: [...later, e('o', '2026-10-05', 60000n, food)] })),
+      categorySpike(
+        ctx({ activeMonths: active3, expenses: [...later, e('o', '2026-10-05', 60000n, food)] }),
+      ),
     ).toEqual([]);
     expect(
       categorySpike(ctx({ activeMonths: active3, expenses: [e('o', '2026-10-05', 60000n, food)] })),

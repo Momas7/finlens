@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { addExpense, createCheckingAccount, signUp } from './helpers';
+import { addExpense, addIncome, createCheckingAccount, signUp } from './helpers';
 
 async function seriousViolations(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
@@ -45,6 +45,18 @@ for (const theme of ['light', 'dark'] as const) {
         'Delivery',
       );
       expect(await seriousViolations(page), 'sugestão').toEqual([]);
+    });
+
+    test('/painel com dados', async ({ page }) => {
+      await signUp(page);
+      await createCheckingAccount(page);
+      await addIncome(page, 'SALARIO', '7.200,00', 'Receitas › Salário');
+      await addExpense(page, 'ALUGUEL', '1.850,00', 'Moradia › Aluguel e financiamento');
+      await addExpense(page, 'LOJA NOVA X', '10,00');
+      await page.goto('/painel');
+      await expect(page.getByRole('meter', { name: 'Renda gasta' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
     });
 
     test('/painel/revisao', async ({ page }) => {

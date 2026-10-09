@@ -50,4 +50,11 @@ describe('scaleGeometry', () => {
 
   it('traços', () =>
     expect(scaleGeometry({ value: 1, max: 4, ticks: 4 }).tickPcts).toEqual([0, 25, 50, 75, 100]));
+
+  it('referência fica no eixo e some sem valor', () => {
+    expect(scaleGeometry({ value: 67, max: 100, reference: 58 }).referencePct).toBe(58);
+    expect(scaleGeometry({ value: 150, max: 100, reference: 58 }).referencePct).toBe(38.67);
+    expect(scaleGeometry({ value: 50, max: 100, reference: 300 }).referencePct).toBe(100);
+    expect(scaleGeometry({ value: 50, max: 100 }).referencePct).toBeNull();
+  });
 });

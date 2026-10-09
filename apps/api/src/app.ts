@@ -7,6 +7,7 @@ import { createAuth } from './auth';
 import type { Config } from './config';
 import { registerErrorHandler } from './http/errors';
 import { accountRoutes } from './modules/accounts/routes';
+import { analyticsRoutes } from './modules/analytics/routes';
 import { categoryRoutes } from './modules/categories/routes';
 import { classificationRoutes } from './modules/classification/routes';
 import { healthRoutes } from './modules/health/routes';
@@ -64,6 +65,7 @@ export async function buildApp(deps: {
   await app.register(classificationRoutes, { db });
   await app.register(ruleRoutes, { db });
   await app.register(reviewRoutes, { db });
+  await app.register(analyticsRoutes, { db });
   await app.register(ruleSuggestionRoutes, { db });
 
   return app;

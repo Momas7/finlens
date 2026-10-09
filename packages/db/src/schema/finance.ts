@@ -271,3 +271,41 @@ export const insightStates = pgTable(
   },
   (t) => [unique('insight_states_workspace_key').on(t.workspaceId, t.dedupeKey)],
 );
+
+/** Meta de dinheiro guardado: o progresso é o saldo da conta vinculada. */
+export const goals = pgTable(
+  'goals',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    accountId: uuid().notNull(),
+    name: text().notNull(),
+    targetCents: bigint({ mode: 'bigint' }).notNull(),
+    targetDate: date({ mode: 'string' }),
+    /** Rendimento anual em pontos-base (10,5% = 1050); nulo = sem rendimento. */
+    annualRateBp: integer(),
+    archivedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    foreignKey({
+      name: 'goals_account_fk',
+      columns: [t.workspaceId, t.accountId],
+      foreignColumns: [financialAccounts.workspaceId, financialAccounts.id],
+    }),
+    // Uma meta ativa por conta: o mesmo saldo não pode contar duas vezes.
+    uniqueIndex('goals_active_account_idx')
+      .on(t.workspaceId, t.accountId)
+      .where(sql`${t.archivedAt} is null`),
+    check('goals_target_check', sql`${t.targetCents} > 0`),
+    check(
+      'goals_rate_check',
+      sql`${t.annualRateBp} is null or (${t.annualRateBp} >= 0 and ${t.annualRateBp} <= 10000)`,
+    ),
+    check('goals_name_check', sql`char_length(${t.name}) between 1 and 60`),
+  ],
+);

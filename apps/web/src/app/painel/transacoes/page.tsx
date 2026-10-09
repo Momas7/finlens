@@ -12,7 +12,7 @@ import { Panel } from '@/components/ui/panel';
 import { Select } from '@/components/ui/select';
 import { accountLabel } from '@/lib/accounts';
 import { apiFetch } from '@/lib/api';
-import { categoryLabels, categoryOptions } from '@/lib/categories';
+import { categoryLabels, filterCategoryOptions } from '@/lib/categories';
 import { formatCents } from '@/lib/money';
 
 const MARKER: Partial<Record<Transaction['classificationStatus'], string>> = {
@@ -115,7 +115,7 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
             defaultValue={filters.get('categoryId') ?? ''}
           >
             <option value="">Todas</option>
-            {categoryOptions(tree).map((g) => (
+            {filterCategoryOptions(tree).map((g) => (
               <optgroup key={g.group} label={g.group}>
                 {g.options.map((o) => (
                   <option key={o.id} value={o.id}>

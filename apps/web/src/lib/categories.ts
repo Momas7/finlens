@@ -23,3 +23,18 @@ export function categoryLabels(tree: CategoryNode[]): Map<string, string> {
   }
   return labels;
 }
+
+/** Opções do filtro da lista: raiz com filhas ganha "{Raiz} (todas)", que inclui as filhas. */
+export function filterCategoryOptions(
+  tree: CategoryNode[],
+): { group: string; options: CategoryOption[] }[] {
+  return categoryOptions(tree).map((g, i) => {
+    const root = tree[i] as CategoryNode;
+    return root.children.length === 0
+      ? g
+      : {
+          ...g,
+          options: [{ id: root.id, label: `${root.name} (todas)`, kind: root.kind }, ...g.options],
+        };
+  });
+}

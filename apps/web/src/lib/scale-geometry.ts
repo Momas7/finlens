@@ -43,8 +43,12 @@ export function scaleGeometry(input: {
   }
 
   const safeValue = Math.max(0, value);
-  // Valor acima do máximo estende a régua, para o excedente continuar visível.
-  const axisMax = Math.max(max, safeValue);
+  const reference =
+    input.reference !== undefined && Number.isFinite(input.reference)
+      ? Math.max(0, input.reference)
+      : null;
+  // Valor ou referência acima do máximo estendem a régua, para continuarem legíveis.
+  const axisMax = Math.max(max, safeValue, reference ?? 0);
   const pct = (n: number) => round2(clampPct((n / axisMax) * 100));
   const hasLimit = limit !== undefined && Number.isFinite(limit) && limit >= 0;
   const limitPct = hasLimit ? pct(limit) : null;
@@ -54,9 +58,7 @@ export function scaleGeometry(input: {
       ? round2(Math.min(pct(safeValue) - limitPct, 100 - limitPct))
       : 0;
 
-  const reference = input.reference;
-  const referencePct =
-    reference !== undefined && Number.isFinite(reference) ? pct(Math.max(0, reference)) : null;
+  const referencePct = reference === null ? null : pct(reference);
   return {
     axisMax,
     filledPct,

@@ -37,6 +37,9 @@ test('categoria abre a lista filtrada', async ({ page }) => {
     .getByRole('link', { name: /^Moradia/ })
     .click();
   await expect(page).toHaveURL(/categoryId=.*from=/);
+  await expect(page.getByLabel('Categoria', { exact: true }).locator('option:checked')).toHaveText(
+    'Moradia (todas)',
+  );
   await expect(page.getByRole('link', { name: 'ALUGUEL' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'MERCADO DIA' })).toHaveCount(0);
 });

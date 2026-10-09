@@ -4,6 +4,7 @@ export * from './budgets';
 export * from './categories';
 export * from './classification';
 export * from './errors';
+export * from './goals';
 export * from './insights';
 export * from './me';
 export * from './money';

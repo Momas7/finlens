@@ -79,6 +79,19 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page), 'página').toEqual([]);
     });
 
+    test('/painel/metas', async ({ page }) => {
+      await signUp(page);
+      await createCheckingAccount(page);
+      await page.goto('/painel/metas');
+      // Alvo abaixo do saldo: a meta fica "Concluída" e o selo entra na verificação.
+      await page.getByLabel('Nome', { exact: true }).fill('Reserva');
+      await page.getByLabel('Valor-alvo', { exact: true }).fill('1.000,00');
+      await page.getByRole('button', { name: 'Criar meta' }).click();
+      await expect(page.getByRole('region', { name: 'Reserva' })).toContainText('Concluída');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

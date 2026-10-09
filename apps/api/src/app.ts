@@ -11,6 +11,7 @@ import { analyticsRoutes } from './modules/analytics/routes';
 import { budgetRoutes } from './modules/budgets/routes';
 import { categoryRoutes } from './modules/categories/routes';
 import { classificationRoutes } from './modules/classification/routes';
+import { goalRoutes } from './modules/goals/routes';
 import { healthRoutes } from './modules/health/routes';
 import { insightRoutes } from './modules/insights/routes';
 import { meRoutes } from './modules/me/routes';
@@ -70,6 +71,7 @@ export async function buildApp(deps: {
   await app.register(analyticsRoutes, { db });
   await app.register(budgetRoutes, { db });
   await app.register(insightRoutes, { db });
+  await app.register(goalRoutes, { db });
   await app.register(ruleSuggestionRoutes, { db });
 
   return app;

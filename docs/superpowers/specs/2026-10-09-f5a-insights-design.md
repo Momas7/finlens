@@ -84,7 +84,7 @@ Todos olham o mês corrente. Os valores aparecem formatados em reais (`formatBRL
 
 ### 4. Tarifas, juros e IOF (`fees`)
 
-- **Considera:** saídas do mês com `categoryKey` em `fees`, `interest` ou `iof`.
+- **Considera:** saídas do mês com `categoryKey` em `financial.fees`, `financial.interest` ou `financial.iof`.
 - **Dispara quando:** a soma é maior que zero.
 - **Severidade:** `warning` se houver juros; senão, `info`. Impacto: a soma.
 - **Texto:**

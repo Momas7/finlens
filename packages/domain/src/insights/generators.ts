@@ -13,7 +13,7 @@ const ANOMALY_MIN_HISTORY = 5;
 const ANOMALY_Z = 3.5;
 const ANOMALY_MIN_GAP = 5000n;
 const DUPLICATE_MAX_DAYS = 2;
-const FEE_KEYS = new Set(['fees', 'interest', 'iof']);
+const FEE_KEYS = new Set(['financial.fees', 'financial.interest', 'financial.iof']);
 const SAVINGS_DROP = 0.1;
 const SAVINGS_MONTHS = 3;
 
@@ -125,7 +125,7 @@ export function fees(ctx: InsightContext): InsightCandidate[] {
   return [
     {
       kind: 'fees',
-      severity: items.some((x) => x.categoryKey === 'interest') ? 'warning' : 'info',
+      severity: items.some((x) => x.categoryKey === 'financial.interest') ? 'warning' : 'info',
       dedupeKey: `fees:${ctx.month}`,
       title: 'Tarifas, juros e IOF',
       body: `Você pagou ${formatBRL(total)} em tarifas, juros e IOF este mês.`,

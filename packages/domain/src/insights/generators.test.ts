@@ -135,12 +135,15 @@ describe('anomalies', () => {
 
 describe('fees', () => {
   it('tarifas é informativo; juros vira atenção', () => {
-    const fee = e('f', '2026-10-03', 1200n, { categoryKey: 'fees', rootId: 'fin' });
+    const fee = e('f', '2026-10-03', 1200n, { categoryKey: 'financial.fees', rootId: 'fin' });
     expect(fees(ctx({ expenses: [fee] }))[0]).toMatchObject({
       severity: 'info',
       impactCents: 1200n,
     });
-    const interest = e('i', '2026-10-04', 3000n, { categoryKey: 'interest', rootId: 'fin' });
+    const interest = e('i', '2026-10-04', 3000n, {
+      categoryKey: 'financial.interest',
+      rootId: 'fin',
+    });
     expect(fees(ctx({ expenses: [fee, interest] }))[0]).toMatchObject({
       severity: 'warning',
       impactCents: 4200n,

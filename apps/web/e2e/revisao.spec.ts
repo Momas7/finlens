@@ -14,7 +14,7 @@ test('confirmar grupo e ver o contador baixar', async ({ page }) => {
     .getByLabel('Categoria para LOJA NOVA X')
     .selectOption({ label: 'Compras › Outras compras' });
   await inbox.getByRole('button', { name: 'Confirmar 3' }).click();
-  await page.goto('/painel/revisao');
+  // A ação confirma e redireciona (semelhantes vazios → revisão); navegar antes cortaria a ação.
   await expect(page.getByText('Tudo revisado.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Revisão', exact: true })).toBeVisible();
 });

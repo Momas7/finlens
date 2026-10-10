@@ -1,26 +1,7 @@
-import { type DemoClient, generateDemo, runDemoSeed } from '@finlens/demo-seed';
+import { generateDemo, runDemoSeed } from '@finlens/demo-seed';
 import { todayInSaoPaulo } from '@finlens/domain';
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestApp, type TestApp } from './helpers';
-
-/** Cliente da demo sobre `app.inject`, guardando o cookie de sessão. */
-function injectClient(app: FastifyInstance): DemoClient {
-  let cookie = '';
-  return async (method, url, body) => {
-    const res = await app.inject({
-      method,
-      url,
-      payload: body as object | undefined,
-      headers: cookie ? { cookie } : {},
-    });
-    const set = res.headers['set-cookie'];
-    if (set) {
-      cookie = (Array.isArray(set) ? set : [set]).map((c) => c.split(';')[0]).join('; ');
-    }
-    return { status: res.statusCode, json: res.body ? JSON.parse(res.body) : null };
-  };
-}
+import { createTestApp, injectClient, type TestApp } from './helpers';
 
 describe('seed da demo', () => {
   let t: TestApp;

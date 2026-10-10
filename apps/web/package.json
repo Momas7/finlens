@@ -8,7 +8,8 @@
     "start": "next start --port 3000",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "media": "playwright test --config media/playwright.config.ts"
   },
   "dependencies": {
     "@finlens/contracts": "workspace:*",

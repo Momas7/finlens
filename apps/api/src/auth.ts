@@ -37,7 +37,7 @@ export function createAuth(db: Db, config: Config, log: FastifyBaseLogger) {
     telemetry: { enabled: false },
     // Logs do Better Auth vão para o pino (estrutura, redaction e serialização de erros).
     logger: betterAuthLogger(log),
-    advanced: { useSecureCookies: config.isProduction },
+    advanced: { useSecureCookies: config.secureCookies },
     databaseHooks: {
       user: {
         create: {

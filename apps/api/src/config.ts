@@ -14,6 +14,9 @@ const EnvSchema = z.object({
   // o X-Forwarded-For que o cliente enviar, então só configure atrás de um proxy reverso que
   // sobrescreva o cabeçalho (nginx, Caddy).
   TRUSTED_PROXIES: z.string().default(''),
+  // Cookie `Secure`: segue NODE_ENV=production. A demo local (http://localhost) desliga, porque
+  // nem todo navegador aceita cookie seguro sem HTTPS.
+  SECURE_COOKIES: z.enum(['true', 'false']).optional(),
 });
 
 export type Config = {
@@ -24,6 +27,7 @@ export type Config = {
   port: number;
   logLevel: z.infer<typeof EnvSchema>['LOG_LEVEL'];
   isProduction: boolean;
+  secureCookies: boolean;
   /** Tentativas de login/cadastro por minuto por IP. */
   authRateLimitPerMinute: number;
   /** Requisições por minuto por IP em todas as rotas. */
@@ -46,6 +50,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     port: e.PORT,
     logLevel: e.LOG_LEVEL,
     isProduction: e.NODE_ENV === 'production',
+    secureCookies: e.SECURE_COOKIES ? e.SECURE_COOKIES === 'true' : e.NODE_ENV === 'production',
     authRateLimitPerMinute: e.AUTH_RATE_LIMIT_PER_MINUTE,
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     trustedProxies: e.TRUSTED_PROXIES.split(',')

@@ -21,6 +21,14 @@ describe('loadConfig', () => {
     });
   });
 
+  it('cookie seguro segue produção, mas a demo local pode desligar', () => {
+    expect(loadConfig(validEnv).secureCookies).toBe(false);
+    expect(loadConfig({ ...validEnv, NODE_ENV: 'production' }).secureCookies).toBe(true);
+    expect(
+      loadConfig({ ...validEnv, NODE_ENV: 'production', SECURE_COOKIES: 'false' }).secureCookies,
+    ).toBe(false);
+  });
+
   it('proxies confiáveis só quando configurados', () => {
     expect(
       loadConfig({ ...validEnv, TRUSTED_PROXIES: '10.0.0.5, 127.0.0.1' }).trustedProxies,

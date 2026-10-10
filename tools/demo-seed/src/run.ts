@@ -34,10 +34,21 @@ export async function runDemoSeed(
 ): Promise<{ created: boolean }> {
   const credentials = { email: DEMO_EMAIL, password: DEMO_PASSWORD };
   const signIn = await client('POST', '/api/auth/sign-in/email', credentials);
-  if (signIn.status === 200) return { created: false };
+  if (signIn.status === 200) {
+    // As metas são criadas por último: sem elas, uma execução anterior parou no meio.
+    const goals = (await client('GET', '/v1/goals')).json as unknown[];
+    if (Array.isArray(goals) && goals.length > 0) return { created: false };
+    throw new Error(
+      'A conta demo existe, mas está incompleta (uma execução anterior falhou). Recrie o banco da demo: docker compose --profile demo down -v',
+    );
+  }
   await expectOk(client, 'POST', '/api/auth/sign-up/email', { ...credentials, name: DEMO_NAME });
 
-  const tree = (await client('GET', '/v1/categories')).json as Node[];
+  const categoriesResponse = await client('GET', '/v1/categories');
+  if (categoriesResponse.status !== 200) {
+    throw new Error(`GET /v1/categories respondeu ${categoriesResponse.status}`);
+  }
+  const tree = categoriesResponse.json as Node[];
   const categories = new Map<string, string>();
   for (const root of tree) {
     categories.set(root.name, root.id);
@@ -48,6 +59,16 @@ export async function runDemoSeed(
     if (!id) throw new Error(`Categoria inexistente na demo: ${label}`);
     return id;
   };
+  // Valida todos os rótulos antes de criar qualquer dado.
+  for (const label of [
+    ...plan.rules.map((r) => r.category),
+    ...plan.budgets.map((b) => b.category),
+    ...plan.transactions
+      .map((t) => t.category)
+      .filter((c): c is string => c !== null && c !== 'auto'),
+  ]) {
+    categoryId(label);
+  }
 
   const accounts = new Map<DemoAccountName, string>();
   for (const { name, ...rest } of plan.accounts) {

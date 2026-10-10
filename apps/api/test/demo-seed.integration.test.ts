@@ -54,4 +54,20 @@ describe('seed da demo', () => {
 
     expect(await runDemoSeed(injectClient(t.app), plan)).toEqual({ created: false });
   });
+
+  it('rótulo inexistente falha antes de criar dados; demo incompleta não passa como pronta', async () => {
+    const t2 = await createTestApp({ RATE_LIMIT_PER_MINUTE: '10000' });
+    try {
+      const good = generateDemo(todayInSaoPaulo());
+      const bad = { ...good, budgets: [{ category: 'Inexistente', amountCents: '1000' }] };
+      const client = injectClient(t2.app);
+      await expect(runDemoSeed(client, bad)).rejects.toThrow(
+        /Categoria inexistente na demo: Inexistente/,
+      );
+      expect((await client('GET', '/v1/accounts')).json).toEqual([]);
+      await expect(runDemoSeed(injectClient(t2.app), good)).rejects.toThrow(/incompleta/);
+    } finally {
+      await t2.close();
+    }
+  });
 });

@@ -15,7 +15,8 @@
     "test": "turbo run test",
     "test:integration": "turbo run test:integration --concurrency=1",
     "eval:classifier": "pnpm --filter @finlens/classifier-eval eval",
-    "demo:seed": "pnpm --filter @finlens/demo-seed seed"
+    "demo:seed": "pnpm --filter @finlens/demo-seed seed",
+    "docs:media": "pnpm --filter @finlens/web media"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

@@ -6,9 +6,15 @@ import { ClassifierDemo } from './(landing)/classifier-demo';
 
 const REPO_URL = 'https://github.com/Momas7/finlens';
 
-export default function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<'/'>) {
+  const { conta } = await searchParams;
   return (
     <div className="min-h-dvh">
+      {conta === 'excluida' && (
+        <p role="status" className="bg-raised px-4 py-3 text-center text-[15px] text-ink">
+          Sua conta foi excluída. Seus dados foram apagados.
+        </p>
+      )}
       <header className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
         <Logo />
         <div className="ml-auto flex items-center gap-1 sm:gap-2">

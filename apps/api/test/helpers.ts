@@ -1,5 +1,6 @@
 import { createDb, type Db } from '@finlens/db';
 import { createTestDatabase } from '@finlens/db/testing';
+import type { DemoClient } from '@finlens/demo-seed';
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
 import { buildApp } from '../src/app';
 import { loadConfig } from '../src/config';
@@ -8,6 +9,8 @@ export type TestApp = {
   app: FastifyInstance;
   db: Db;
   ownerDb: Db;
+  /** URL do database temporário com o role da aplicação. */
+  appUrl: string;
   signUp(email?: string): Promise<{ cookie: string; userId: string }>;
   as(cookie: string): (opts: InjectOptions) => Promise<LightMyRequestResponse>;
   close(): Promise<void>;
@@ -32,6 +35,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     app,
     db,
     ownerDb,
+    appUrl: testDb.appUrl,
     async signUp(email = `user${++counter}-${Date.now()}@example.com`) {
       const res = await app.inject({
         method: 'POST',
@@ -56,4 +60,23 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
       await testDb.drop();
     },
   };
+}
+
+/** Cliente da demo sobre `app.inject`, guardando o cookie de sessão. */
+export function injectClient(app: FastifyInstance): DemoClient & { cookie(): string } {
+  let cookie = '';
+  const client = async (method: 'GET' | 'POST' | 'PUT', url: string, body?: unknown) => {
+    const res = await app.inject({
+      method,
+      url,
+      payload: body as object | undefined,
+      headers: cookie ? { cookie } : {},
+    });
+    const set = res.headers['set-cookie'];
+    if (set) {
+      cookie = (Array.isArray(set) ? set : [set]).map((c) => c.split(';')[0]).join('; ');
+    }
+    return { status: res.statusCode, json: res.body ? JSON.parse(res.body) : null };
+  };
+  return Object.assign(client, { cookie: () => cookie });
 }

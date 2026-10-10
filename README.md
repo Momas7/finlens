@@ -71,7 +71,7 @@ Cada meta acompanha o saldo de uma conta: depositou nela, a meta anda. A tela mo
 ## Qualidade, em números
 
 - **Classificador:** num dataset sintético de 301 lançamentos, 85% são categorizados sozinhos com **99,6% de precisão** ([relatório](docs/classifier-eval.md)). O CI falha se a precisão do modo automático cair abaixo de 95%.
-- **Testes** (última execução completa): cerca de 260 unitários, 136 de integração contra Postgres real e 66 E2E com Playwright. O CI também sobe o perfil demo inteiro.
+- **Testes** (última execução completa): cerca de 265 unitários, 142 de integração contra Postgres real e 69 E2E com Playwright. O CI também sobe o perfil demo inteiro.
 - **Acessibilidade:** axe em todas as telas, nos temas claro e escuro, sem violações sérias ou críticas.
 - **Isolamento:** cada tabela usa `ENABLE` e `FORCE ROW LEVEL SECURITY`. A API conecta com um role sem `BYPASSRLS`, e uma consulta sem contexto de tenant devolve zero linhas.
 
@@ -156,7 +156,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F6a | Demo de um comando e esta vitrine | ✅ |
 | F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima |
 | F3 | Transferências, faturas, parcelas e recorrências | planejada |
-| F6b | Exportar e excluir os próprios dados | planejada |
+| F6b | Exportar e excluir os próprios dados | ✅ |
 | — | LLM opcional como último recurso da classificação | planejada |
 
 ## Segurança
@@ -165,6 +165,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 - Senhas com argon2id. Cookies `HttpOnly` e `SameSite=Lax`, `Secure` em produção.
 - Rate limit global e um limite mais restrito em login e cadastro.
 - Logs com redaction de cookies, headers de autorização e senhas.
+- Seus dados são seus: em "Sua conta" você baixa tudo (JSON completo ou CSV de lançamentos para planilha) e pode excluir a conta, o que apaga todos os dados em cascata.
 - Nenhum dado financeiro real entra no repositório: as fixtures são sintéticas, `fixtures/private/` está no `.gitignore` e o gitleaks varre o histórico no CI.
 
 Encontrou uma vulnerabilidade? Abra uma issue, sem detalhes sensíveis, pedindo um canal privado de contato.

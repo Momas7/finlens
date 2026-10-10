@@ -1,4 +1,5 @@
 import { Review } from '@finlens/contracts';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -33,6 +34,12 @@ export default async function PainelLayout({ children }: { children: ReactNode }
             <span className="min-w-0 truncate text-[13px] text-ink-soft">
               Workspace: {me.workspace.name}
             </span>
+            <Link
+              href="/painel/conta"
+              className="rounded-[6px] px-2 py-1.5 text-[13px] whitespace-nowrap text-ink-soft hover:text-ink"
+            >
+              Sua conta
+            </Link>
             <SignOutButton />
           </div>
         </div>

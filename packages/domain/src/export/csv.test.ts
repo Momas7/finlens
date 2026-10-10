@@ -13,6 +13,26 @@ describe('CSV de lançamentos', () => {
     expect(csvField('a\nb')).toBe('"a\nb"');
     expect(csvField('simples')).toBe('simples');
   });
+  it('neutraliza fórmulas em campos de texto (=, +, -, @, tab)', () => {
+    expect(csvField('=HYPERLINK("x")')).toBe(`"'=HYPERLINK(""x"")"`);
+    expect(csvField('+SALDO')).toBe("'+SALDO");
+    expect(csvField('-ESTORNO')).toBe("'-ESTORNO");
+    expect(csvField('@SOMA')).toBe("'@SOMA");
+    expect(csvField('\tX')).toBe("'\tX");
+    const row = transactionsCsv([
+      {
+        postedDate: '2026-10-05',
+        account: 'Inter',
+        description: '=1+1',
+        amountCents: -4590n,
+        category: null,
+        status: 'none',
+      },
+    ]);
+    // O valor continua número (com sinal); só o texto é neutralizado.
+    expect(row).toContain("2026-10-05;Inter;'=1+1;-45,90;;sem categoria");
+  });
+
   it('BOM, cabeçalho e linhas', () => {
     expect(transactionsCsv([])).toBe('﻿data;conta;descrição;valor;categoria;situação\r\n');
     expect(

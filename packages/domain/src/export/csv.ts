@@ -16,9 +16,13 @@ export type CsvTransaction = {
   status: string;
 };
 
-/** Campo CSV: entre aspas (com aspas duplicadas) quando tem `;`, aspas ou quebra de linha. */
+/**
+ * Campo de texto CSV: neutraliza fórmulas (planilhas executam `=`, `+`, `-`, `@` no início,
+ * e descrições de extrato vêm de terceiros) e põe entre aspas quando há `;`, aspas ou quebra.
+ */
 export function csvField(value: string): string {
-  return /[;"\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /[;"\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
 /** Centavos no formato de planilha em português, sem separador de milhar: -1234,56. */

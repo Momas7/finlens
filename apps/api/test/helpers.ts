@@ -9,6 +9,8 @@ export type TestApp = {
   app: FastifyInstance;
   db: Db;
   ownerDb: Db;
+  /** URL do database temporário com o role da aplicação. */
+  appUrl: string;
   signUp(email?: string): Promise<{ cookie: string; userId: string }>;
   as(cookie: string): (opts: InjectOptions) => Promise<LightMyRequestResponse>;
   close(): Promise<void>;
@@ -33,6 +35,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     app,
     db,
     ownerDb,
+    appUrl: testDb.appUrl,
     async signUp(email = `user${++counter}-${Date.now()}@example.com`) {
       const res = await app.inject({
         method: 'POST',

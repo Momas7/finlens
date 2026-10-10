@@ -1,4 +1,4 @@
-import { user, withTenant } from '@finlens/db';
+import { createDb, user } from '@finlens/db';
 import { DEMO_EMAIL, DEMO_PASSWORD, generateDemo, runDemoSeed } from '@finlens/demo-seed';
 import { todayInSaoPaulo } from '@finlens/domain';
 import { eq, sql } from 'drizzle-orm';
@@ -115,6 +115,22 @@ describe('exportar e excluir dados', () => {
   });
 
   it('exclusão válida apaga tudo da pessoa e mais nada', async () => {
+    // Superusuário ignora a RLS: só assim dá para ver se sobrou alguma linha do workspace.
+    const admin = new URL(process.env.TEST_DATABASE_ADMIN_URL ?? '');
+    admin.pathname = new URL(t.appUrl).pathname;
+    const superDb = createDb(admin.toString());
+    const tables = await tenantTables();
+    const count = async (table: string) =>
+      (
+        await superDb.execute<{ n: string }>(
+          sql`select count(*)::text as n from ${sql.identifier(table)} where workspace_id = ${demoWorkspaceId}`,
+        )
+      ).rows[0]?.n;
+    // Controle positivo: a demo popula as tabelas principais antes da exclusão.
+    for (const table of ['transactions', 'financial_accounts', 'categories', 'budgets', 'goals']) {
+      expect(Number(await count(table)), table).toBeGreaterThan(0);
+    }
+
     const res = await demo('POST', '/v1/me/delete', {
       password: DEMO_PASSWORD,
       confirm: 'EXCLUIR',
@@ -128,16 +144,16 @@ describe('exportar e excluir dados', () => {
     });
     expect(signIn.statusCode).not.toBe(200);
     expect(await t.db.select().from(user).where(eq(user.id, demoUserId))).toEqual([]);
-    const tables = await tenantTables();
     expect(tables.length).toBeGreaterThan(8);
-    await withTenant(t.db, { userId: demoUserId, workspaceId: demoWorkspaceId }, async (tx) => {
-      for (const table of tables) {
-        const { rows } = await tx.execute<{ n: string }>(
-          sql`select count(*)::text as n from ${sql.identifier(table)} where workspace_id = ${demoWorkspaceId}`,
-        );
-        expect(rows[0]?.n, table).toBe('0');
-      }
-    });
+    try {
+      for (const table of tables) expect(await count(table), table).toBe('0');
+      const ws = await superDb.execute<{ n: string }>(
+        sql`select count(*)::text as n from workspaces where id = ${demoWorkspaceId}`,
+      );
+      expect(ws.rows[0]?.n).toBe('0');
+    } finally {
+      await superDb.$client.end();
+    }
     const biaList = (await bia({ method: 'GET', url: '/v1/transactions' })).json();
     expect(biaList.items).toHaveLength(1);
   });

@@ -39,6 +39,7 @@ A pessoa leva todos os seus dados quando quiser e pode apagar a conta de forma d
   - **categoria:** "Raiz › Filha", ou vazio quando não houver.
   - **situação:** confirmada, automática, provável, sugestão ou sem categoria.
   - Campos com `;`, aspas ou quebra de linha vão entre aspas, com as aspas internas duplicadas.
+  - Campos de texto que começam com `=`, `+`, `-`, `@`, tab ou CR recebem `'` na frente, para não virarem fórmula na planilha (as descrições de extrato vêm de terceiros).
   - Ordem: data e depois id.
 - Tudo é lido sob RLS, na sessão da pessoa.
 

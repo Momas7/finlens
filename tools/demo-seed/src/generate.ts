@@ -31,6 +31,8 @@ export type DemoGoal = {
 };
 export type DemoPlan = {
   accounts: DemoAccount[];
+  /** Regras que um usuário de verdade já teria aceitado para os recorrentes. */
+  rules: { pattern: string; category: string }[];
   transactions: DemoTx[];
   budgets: { category: string; amountCents: string }[];
   goals: DemoGoal[];
@@ -193,6 +195,26 @@ export function generateDemo(today: string): DemoPlan {
         openingBalanceCents: '300000',
         openingBalanceDate: opening,
       },
+    ],
+    rules: [
+      { pattern: 'SALARIO ACME', category: 'Receitas › Salário' },
+      { pattern: 'ALUGUEL APTO', category: 'Moradia › Aluguel e financiamento' },
+      { pattern: 'CONDOMINIO EDIFICIO SOL', category: 'Moradia › Condomínio' },
+      { pattern: 'ENEL', category: 'Moradia › Energia' },
+      { pattern: 'VIVO FIBRA', category: 'Moradia › Internet e telefone' },
+      { pattern: 'SMARTFIT', category: 'Saúde › Academia' },
+      { pattern: 'NETFLIX', category: 'Assinaturas › Streaming de vídeo' },
+      { pattern: 'UBER TRIP', category: 'Transporte › App de transporte' },
+      { pattern: 'IFOOD', category: 'Alimentação › Delivery' },
+      { pattern: 'CARREFOUR', category: 'Alimentação › Mercado' },
+      { pattern: 'PAO DE ACUCAR', category: 'Alimentação › Mercado' },
+      { pattern: 'PADARIA PAO QUENTE', category: 'Alimentação › Padaria' },
+      { pattern: 'DROGASIL', category: 'Saúde › Farmácia' },
+      { pattern: 'AMAZON', category: 'Compras › Casa e decoração' },
+      { pattern: 'POSTO SHELL', category: 'Transporte › Combustível' },
+      { pattern: 'CINEMARK', category: 'Lazer › Cinema e eventos' },
+      { pattern: 'BAR DO ZE', category: 'Lazer › Bares' },
+      { pattern: 'TRANSFERENCIA RESERVA', category: 'Movimentação › Transferência entre contas' },
     ],
     transactions: txs,
     budgets: [

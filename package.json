@@ -14,7 +14,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration --concurrency=1",
-    "eval:classifier": "pnpm --filter @finlens/classifier-eval eval"
+    "eval:classifier": "pnpm --filter @finlens/classifier-eval eval",
+    "demo:seed": "pnpm --filter @finlens/demo-seed seed"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

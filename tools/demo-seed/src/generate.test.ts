@@ -23,7 +23,20 @@ describe('generateDemo', () => {
     const used = plan.transactions
       .map((t) => t.category)
       .filter((c): c is string => c !== null && c !== 'auto');
-    for (const c of [...used, ...plan.budgets.map((b) => b.category)]) expect(labels).toContain(c);
+    for (const c of [
+      ...used,
+      ...plan.budgets.map((b) => b.category),
+      ...plan.rules.map((r) => r.category),
+    ])
+      expect(labels).toContain(c);
+  });
+
+  it('cria regras para os recorrentes e deixa a padaria nova como sugestão', () => {
+    const patterns = plan.rules.map((r) => r.pattern);
+    expect(patterns).toEqual(
+      expect.arrayContaining(['UBER TRIP', 'IFOOD', 'CARREFOUR', 'NETFLIX']),
+    );
+    expect(patterns.some((p) => p.includes('SAO JOAO'))).toBe(false);
   });
 
   it('planta duplicata, valor fora do padrão, tarifas e revisão', () => {

@@ -101,6 +101,30 @@ jobs:
           path: apps/web/playwright-report
           retention-days: 7
 
+  demo:
+    # Garante que "Experimente em 1 comando" do README continua funcionando.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Start demo profile
+        run: docker compose --profile demo up --build -d
+      - name: Wait for the demo seed
+        run: |
+          for i in $(seq 1 100); do
+            status=$(docker compose --profile demo ps -a seed --format '{{.State}} {{.ExitCode}}')
+            case "$status" in
+              exited\ 0) echo "seed ok"; break ;;
+              exited*) echo "seed falhou: $status"; docker compose --profile demo logs; exit 1 ;;
+            esac
+            sleep 3
+          done
+          docker compose --profile demo logs seed | grep -q "Conta demo criada"
+      - name: Login page responds
+        run: curl -fsS -o /dev/null http://localhost:3000/login
+      - name: Logs on failure
+        if: failure()
+        run: docker compose --profile demo logs
+
   secrets:
     runs-on: ubuntu-latest
     steps:

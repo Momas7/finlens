@@ -1,6 +1,28 @@
+# Desenvolvimento: `docker compose up -d db` (ou podman compose) sobe só o banco.
+# Demo completa: `docker compose --profile demo up --build` e abra http://localhost:3000.
+# As senhas e o segredo abaixo são APENAS para uso local. Nunca use em produção.
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://finlens_app:finlens_app@db:5432/finlens
+  DATABASE_OWNER_URL: postgres://finlens_owner:finlens_owner@db:5432/finlens
+  BETTER_AUTH_SECRET: apenas-local-troque-antes-de-expor-este-servico-0000
+  BETTER_AUTH_URL: http://localhost:3000
+  WEB_ORIGIN: http://localhost:3000
+  API_URL: http://api:3333
+  PORT: "3333"
+  LOG_LEVEL: warn
+  RATE_LIMIT_PER_MINUTE: "5000"
+
+x-app: &app
+  build: .
+  image: localhost/finlens-demo:latest
+  profiles: [demo]
+
 services:
   db:
     image: docker.io/library/postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
@@ -9,10 +31,53 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro,Z
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d finlens"]
       interval: 2s
       timeout: 3s
-      retries: 20
+      retries: 30
+
+  migrate:
+    <<: *app
+    command: ["pnpm", "--filter", "@finlens/db", "db:migrate"]
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    command: ["pnpm", "--filter", "@finlens/api", "start"]
+    environment: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3333/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  web:
+    <<: *app
+    restart: unless-stopped
+    command: ["pnpm", "--filter", "@finlens/web", "start"]
+    environment: *app-env
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  seed:
+    <<: *app
+    command: ["pnpm", "--filter", "@finlens/demo-seed", "seed"]
+    environment:
+      <<: *app-env
+      DEMO_API_URL: http://api:3333
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -1,12 +1,79 @@
 # Finlens
 
-Analista financeiro pessoal open source e self-hosted. Você importa extratos, o Finlens classifica quase tudo sozinho, pede confirmação apenas do que tem dúvida, aprende com as suas correções e transforma os dados em insights acionáveis: problema, evidência, impacto em R$ e sugestão.
+[![CI](https://github.com/Momas7/finlens/actions/workflows/ci.yml/badge.svg)](https://github.com/Momas7/finlens/actions/workflows/ci.yml)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-Não é um CRUD de despesas. O foco é um pipeline de classificação híbrido e mensurável (regras, histórico do usuário, similaridade e LLM apenas como último recurso) e um motor de insights determinístico que nunca inventa números.
+Analista financeiro pessoal, open source e self-hosted. Ele classifica seus lançamentos sozinho, pede confirmação só do que tem dúvida e aprende com cada correção. Também mostra o que saiu do normal no mês, com números e uma ação.
 
-> **Status:** contas, lançamentos e classificação automática prontos (F0, F1a e F2a). Veja o [roadmap](docs/architecture.md#11-roadmap).
+![Percurso pelo Finlens: painel do mês, revisão em lote, insights e orçamentos](docs/media/finlens.gif)
 
-**Classificador:** em um dataset sintético de 301 lançamentos, 85% são categorizados sozinhos com 99,6% de precisão — [relatório completo](docs/classifier-eval.md), regenerado e verificado no CI.
+Não é um CRUD de despesas. O núcleo é um classificador em camadas, medido no CI (regras, histórico do usuário, similaridade, dicionário de estabelecimentos), e um motor de insights determinístico que nunca inventa números.
+
+## Experimente em 1 comando
+
+Precisa só de Docker ou Podman com Compose:
+
+```bash
+git clone https://github.com/Momas7/finlens && cd finlens
+docker compose --profile demo up --build      # ou: podman compose --profile demo up --build
+```
+
+Abra http://localhost:3000 e entre com **demo@finlens.local** / **demo-finlens-123**.
+
+A conta demo tem seis meses de dados fictícios, com casos plantados para cada tela: uma cobrança duplicada, um valor fora do padrão, um orçamento estourado, lançamentos esperando revisão e uma regra sugerida. Ela é criada pela própria API, então classificação e aprendizado rodam de verdade.
+
+> Senhas e segredo do perfil `demo` são **apenas para uso local**. Não exponha esse perfil na internet.
+
+## O que ele faz
+
+### Painel do mês
+
+Quanto sobrou e qual fatia da renda já foi gasta, comparada com o mesmo dia do mês passado (a marca ▾ na régua). Também mostra para onde foi o dinheiro e os últimos 6 meses. Os gráficos são SVG renderizados no servidor, sem JavaScript no cliente, e cada um tem uma tabela equivalente para leitor de tela.
+
+<img src="docs/media/inicio-light.png" alt="Painel do mês com quanto sobrou, régua da renda gasta e insights" width="100%">
+
+### Classificação que aprende e revisão em lote
+
+Cada lançamento é classificado ao ser salvo, com a confiança e o motivo. O que tem dúvida vai para a Revisão, agrupado por estabelecimento: um clique confirma o grupo inteiro. Corrigir um lançamento oferece levar a correção para os parecidos. Depois de três confirmações iguais, o Finlens propõe uma regra.
+
+<img src="docs/media/revisao-dark.png" alt="Revisão com regra sugerida e grupo esperando categoria, tema escuro" width="100%">
+
+### Insights
+
+Sete geradores puros olham o mês corrente:
+
+- categoria acima do normal até o mesmo dia do mês;
+- pequenas compras que se somam;
+- valor fora do padrão (z-score robusto com mediana e MAD);
+- tarifas, juros e IOF;
+- possível cobrança duplicada;
+- orçamento estourando;
+- queda na taxa de poupança.
+
+Cada insight traz o impacto em reais e uma ação. Dispensado, não volta.
+
+<img src="docs/media/insights-light.png" alt="Lista de insights ordenada por impacto" width="100%">
+
+### Orçamentos
+
+Um limite mensal por categoria, versionado por mês: mudar o limite em outubro não reescreve setembro. A tela mostra o estado (atenção a partir de 80%), o ritmo ("No ritmo atual, fecha em R$ X") e uma sugestão de limite pela mediana dos meses anteriores.
+
+<img src="docs/media/orcamentos-light.png" alt="Orçamentos por categoria com réguas e ritmo" width="100%">
+
+### Metas
+
+Cada meta acompanha o saldo de uma conta: depositou nela, a meta anda. A tela mostra a previsão de conclusão no ritmo atual e quanto guardar por mês para chegar numa data, com rendimento composto opcional.
+
+<img src="docs/media/metas-light.png" alt="Meta de reserva de emergência com previsão e aporte necessário" width="100%">
+
+<img src="docs/media/inicio-mobile.png" alt="Painel do mês no celular" width="320">
+
+## Qualidade, em números
+
+- **Classificador:** num dataset sintético de 301 lançamentos, 85% são categorizados sozinhos com **99,6% de precisão** ([relatório](docs/classifier-eval.md)). O CI falha se a precisão do modo automático cair abaixo de 95%.
+- **Testes** (última execução completa): cerca de 260 unitários, 136 de integração contra Postgres real e 66 E2E com Playwright. O CI também sobe o perfil demo inteiro.
+- **Acessibilidade:** axe em todas as telas, nos temas claro e escuro, sem violações sérias ou críticas.
+- **Isolamento:** cada tabela usa `ENABLE` e `FORCE ROW LEVEL SECURITY`. A API conecta com um role sem `BYPASSRLS`, e uma consulta sem contexto de tenant devolve zero linhas.
 
 ## Stack
 
@@ -14,30 +81,32 @@ Não é um CRUD de despesas. O foco é um pipeline de classificação híbrido e
 - **API:** Fastify, Zod, Better Auth
 - **Banco:** PostgreSQL 17 com Row-Level Security, Drizzle ORM
 - **Monorepo:** pnpm + Turborepo, Biome, Vitest, Playwright
-- **CI:** GitHub Actions (lint, typecheck, testes unitários, de integração e E2E, gitleaks)
+- **CI:** GitHub Actions (lint, typecheck, testes unitários, de integração e E2E, perfil demo, gitleaks)
 
 ## Arquitetura
 
 ```
 apps/web (Next.js) ──HTTP──► apps/api (Fastify) ──► PostgreSQL (RLS)
 
-packages/domain     regras de negócio puras, sem I/O
+packages/domain     regras de negócio puras, sem I/O (classificação, insights, orçamentos, metas)
 packages/db         schema Drizzle, migrations, políticas RLS
 packages/contracts  schemas Zod compartilhados entre web e api
+tools/              avaliação do classificador e seed da demo
 ```
 
-O Next.js encaminha `/api/auth/*` e `/v1/*` para a API, então o navegador fala com uma única origem e o cookie de sessão nunca é exposto a outro domínio.
+O Next.js encaminha `/api/auth/*` e `/v1/*` para a API. O navegador fala com uma única origem, e o cookie de sessão nunca é exposto a outro domínio.
 
 Detalhes e decisões:
 
-- [Arquitetura e escopo do MVP](docs/architecture.md)
+- [Arquitetura e escopo](docs/architecture.md)
 - [ADR 0001 — Monólito modular em monorepo](docs/adr/0001-monorepo-modular.md)
 - [ADR 0002 — Isolamento de tenant com RLS](docs/adr/0002-rls-multi-tenant.md)
 - [ADR 0003 — Autenticação com Better Auth](docs/adr/0003-auth-better-auth.md)
+- Specs e planos de cada fase em [`docs/superpowers`](docs/superpowers)
 
-## Rodando localmente
+## Desenvolvimento
 
-Pré-requisitos: Node 24, Docker ou Podman com Compose.
+Pré-requisitos: Node 24 e Docker ou Podman com Compose.
 
 ```bash
 corepack enable pnpm
@@ -48,13 +117,20 @@ openssl rand -base64 32
 docker compose up -d db        # ou: podman compose up -d db
 pnpm --filter @finlens/db db:migrate
 pnpm dev
+pnpm demo:seed                 # opcional: cria a conta demo no seu banco local
 ```
 
-Web em http://localhost:3000, API em http://localhost:3333.
+Web em http://localhost:3000 e API em http://localhost:3333.
 
-> As senhas dos roles do banco em `.env.example` e `infra/postgres/init/01-roles.sql` são apenas para desenvolvimento local. Nunca use esses valores em produção.
+O banco usa `restart: unless-stopped`. No Podman sem daemon, para ele voltar sozinho depois de reiniciar a máquina, habilite uma vez:
 
-## Testes
+```bash
+systemctl --user enable --now podman-restart.service
+```
+
+> As senhas dos roles do banco em `.env.example`, `compose.yaml` e `infra/postgres/init/01-roles.sql` são apenas para desenvolvimento local.
+
+### Testes e mídia
 
 ```bash
 pnpm lint
@@ -63,19 +139,35 @@ pnpm test                 # unitários
 pnpm test:integration     # precisa do Postgres do compose rodando
 pnpm eval:classifier      # avalia o classificador e atualiza docs/classifier-eval.md
 pnpm --filter @finlens/web test:e2e
+pnpm docs:media           # regenera as imagens deste README (precisa do app com a conta demo)
 ```
 
 Os testes de integração criam um database temporário por arquivo de teste e o apagam ao final.
 
+## Roadmap
+
+| Fase | Conteúdo | Status |
+|---|---|---|
+| F0 | Fundação: monorepo, Postgres + RLS, autenticação, CI | ✅ |
+| F1a | Contas, cartões e lançamento manual | ✅ |
+| F2 | Classificação em camadas, revisão em lote, regras sugeridas | ✅ |
+| F4 | Painel do mês e orçamentos | ✅ |
+| F5 | Insights e metas | ✅ |
+| F6a | Demo de um comando e esta vitrine | ✅ |
+| F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima |
+| F3 | Transferências, faturas, parcelas e recorrências | planejada |
+| F6b | Exportar e excluir os próprios dados | planejada |
+| — | LLM opcional como último recurso da classificação | planejada |
+
 ## Segurança
 
-- Cada tabela de tenant usa `ENABLE` e `FORCE ROW LEVEL SECURITY`. A API conecta com um role sem `BYPASSRLS`; uma query sem contexto de tenant retorna zero linhas.
+- Row-Level Security com `FORCE` em todas as tabelas de tenant e FKs compostas com `workspace_id`.
 - Senhas com argon2id. Cookies `HttpOnly` e `SameSite=Lax`, `Secure` em produção.
-- Rate limit global e mais restrito em login e cadastro.
+- Rate limit global e um limite mais restrito em login e cadastro.
 - Logs com redaction de cookies, headers de autorização e senhas.
-- Nenhum dado financeiro real entra no repositório: fixtures são sintéticas e `fixtures/private/` está no `.gitignore`.
+- Nenhum dado financeiro real entra no repositório: as fixtures são sintéticas, `fixtures/private/` está no `.gitignore` e o gitleaks varre o histórico no CI.
 
-Encontrou uma vulnerabilidade? Abra uma issue sem detalhes sensíveis pedindo um canal privado de contato.
+Encontrou uma vulnerabilidade? Abra uma issue, sem detalhes sensíveis, pedindo um canal privado de contato.
 
 ## Licença
 

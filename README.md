@@ -154,7 +154,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F4 | Painel do mês e orçamentos | ✅ |
 | F5 | Insights e metas | ✅ |
 | F6a | Demo de um comando e esta vitrine | ✅ |
-| F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima |
+| F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima (aguardando extratos reais para validar os parsers) |
 | F3 | Transferências, faturas, parcelas e recorrências | planejada |
 | F6b | Exportar e excluir os próprios dados | ✅ |
 | — | LLM opcional como último recurso da classificação | planejada |

@@ -18,6 +18,8 @@ async function charge(page: Page, description: string, amount: string, date: str
 }
 
 async function seed(page: Page) {
+  // Oito lançamentos pela interface: passa de 30 s com a suíte inteira em paralelo.
+  test.setTimeout(90_000);
   await signUp(page);
   await createCheckingAccount(page, 'Inter', '5.000,00');
   for (const [k, amount] of [

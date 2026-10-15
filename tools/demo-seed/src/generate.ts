@@ -158,6 +158,33 @@ export function generateDemo(today: string): DemoPlan {
   // A Netflix subiu de R$ 55,90 para R$ 59,90 (aumento de preço) e foi cobrada duas vezes.
   plant(dup1, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
   plant(dup2, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  // Parcelamentos: Magalu em andamento (3 de 10) e notebook terminando (9 de 10, a última no mês seguinte).
+  for (const [ago, n] of [
+    [63, 1],
+    [33, 2],
+    [3, 3],
+  ] as const) {
+    txs.push({
+      account: 'Mercado Pago',
+      postedDate: addDays(today, -ago),
+      amountCents: '-19900',
+      description: `MAGALU PARC ${pad(n)}/10`,
+      category: 'Compras › Eletrônicos',
+    });
+  }
+  for (const [ago, n] of [
+    [58, 7],
+    [29, 8],
+    [0, 9],
+  ] as const) {
+    txs.push({
+      account: 'Mercado Pago',
+      postedDate: addDays(today, -ago),
+      amountCents: '-34900',
+      description: `NOTEBOOK DELL PARC ${pad(n)}/10`,
+      category: 'Compras › Eletrônicos',
+    });
+  }
   // Spotify novo: três cobranças a cada 28 dias, a mais antiga há 59 dias.
   for (const ago of [59, 31, 3]) {
     txs.push({

@@ -20,7 +20,7 @@ docker compose --profile demo up --build      # ou: podman compose --profile dem
 
 Abra http://localhost:3000 e entre com **demo@finlens.local** / **demo-finlens-123**.
 
-A conta demo tem seis meses de dados fictícios, com casos plantados para cada tela: uma cobrança duplicada, um valor fora do padrão, um orçamento estourado, lançamentos esperando revisão, uma regra sugerida, uma assinatura nova (Spotify) e um aumento de preço (Netflix). Ela é criada pela própria API, então classificação e aprendizado rodam de verdade.
+A conta demo tem seis meses de dados fictícios, com casos plantados para cada tela: uma cobrança duplicada, um valor fora do padrão, um orçamento estourado, lançamentos esperando revisão, uma regra sugerida, uma assinatura nova (Spotify), um aumento de preço (Netflix) e dois parcelamentos (Magalu e notebook). Ela é criada pela própria API, então classificação e aprendizado rodam de verdade.
 
 > Senhas e segredo do perfil `demo` são **apenas para uso local**. Não exponha esse perfil na internet.
 
@@ -46,9 +46,13 @@ Quando duas pontas têm valores iguais e opostos em contas diferentes (uma trans
 
 O histórico de saídas revela o que se repete (assinaturas, aluguel, planos): cadência, valor típico, próxima cobrança e custo mensal equivalente. A tela mostra o total por mês e três avisos entram nos insights: cobrança que não veio, aumento de preço e assinatura nova. Tudo é calculado na hora, sem cadastro.
 
+### Parcelas
+
+Compras parceladas (`PARC 03/10` no texto) viram planos: parcela atual, quantas faltam, quanto sobra a pagar e o compromisso de cada mês. Dois avisos entram nos insights: quando as parcelas do mês seguinte passam de 30% da renda e quando um parcelamento está terminando.
+
 ### Insights
 
-Dez geradores puros olham o mês corrente (os de recorrência olham o histórico de até 26 meses):
+Doze geradores puros olham o mês corrente (os de recorrência olham o histórico de até 26 meses):
 
 - categoria acima do normal até o mesmo dia do mês;
 - pequenas compras que se somam;
@@ -57,7 +61,8 @@ Dez geradores puros olham o mês corrente (os de recorrência olham o histórico
 - possível cobrança duplicada;
 - orçamento estourando;
 - queda na taxa de poupança;
-- cobrança recorrente que não veio, aumento de preço e assinatura nova.
+- cobrança recorrente que não veio, aumento de preço e assinatura nova;
+- compromisso alto de parcelas e parcelamento terminando.
 
 Cada insight traz o impacto em reais e uma ação. Dispensado, não volta.
 
@@ -166,7 +171,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima (aguardando extratos reais para validar os parsers) |
 | F3a | Transferências e pagamento de fatura (ligação automática e sugestões) | ✅ |
 | F3b | Recorrências e assinaturas (cobrança que não veio, aumento de preço) | ✅ |
-| F3c | Parcelas e compromisso futuro | planejada |
+| F3c | Parcelas e compromisso futuro | ✅ |
 | F6b | Exportar e excluir os próprios dados | ✅ |
 | — | LLM opcional como último recurso da classificação | planejada |
 

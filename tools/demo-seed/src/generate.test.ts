@@ -84,6 +84,19 @@ describe('generateDemo', () => {
     expect(netflix.filter((t) => t.amountCents === '-5590').length).toBeGreaterThanOrEqual(5);
   });
 
+  it('dois parcelamentos: Magalu em andamento e notebook na penúltima parcela', () => {
+    const magalu = plan.transactions.filter((t) => t.description.startsWith('MAGALU PARC'));
+    expect(magalu.map((t) => t.description)).toEqual([
+      'MAGALU PARC 01/10',
+      'MAGALU PARC 02/10',
+      'MAGALU PARC 03/10',
+    ]);
+    const notebook = plan.transactions.filter((t) =>
+      t.description.startsWith('NOTEBOOK DELL PARC'),
+    );
+    expect(notebook.map((t) => t.postedDate).at(-1)).toBe('2026-10-10');
+  });
+
   it('orçamento de Lazer estourado e meta na Reserva', () => {
     expect(plan.budgets).toContainEqual({ category: 'Lazer', amountCents: '15000' });
     const leisure = inMonth(plan.transactions, '2026-10')

@@ -74,3 +74,21 @@ export async function dismissRuleSuggestion(id: string): Promise<ReviewState> {
   revalidatePath('/painel', 'layout');
   return {};
 }
+
+/** Liga as duas pontas como transferência (ou pagamento de fatura). */
+export async function linkTransfer(a: string, b: string): Promise<ReviewState> {
+  const idA = parseId(a);
+  const idB = parseId(b);
+  if (!idA || !idB) return { error: 'Lançamento inválido. Recarregue a página.' };
+  const result = await guard(() => apiSend('POST', '/v1/transfers/link', { a: idA, b: idB }));
+  if (!result.ok) return { error: result.error.message };
+  revalidatePath('/painel', 'layout');
+  return {};
+}
+
+export async function dismissTransfer(id: string): Promise<ReviewState> {
+  const result = await guard(() => apiSend('POST', '/v1/transfers/dismiss', { id }));
+  if (!result.ok) return { error: result.error.message };
+  revalidatePath('/painel', 'layout');
+  return {};
+}

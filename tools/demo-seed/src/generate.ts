@@ -57,7 +57,7 @@ export function generateDemo(today: string): DemoPlan {
     cents: number,
     description: string,
     category: string,
-    opts: { forceCategory?: boolean } = {},
+    opts: { forceCategory?: boolean; auto?: boolean } = {},
   ) => {
     const isCurrent = m === current;
     const d = Math.min(day, lastDay(m));
@@ -68,7 +68,7 @@ export function generateDemo(today: string): DemoPlan {
       amountCents: String(cents),
       description,
       // Meses fechados ficam confirmados (alimentam o histórico); o mês corrente fica no automático.
-      category: isCurrent && !opts.forceCategory ? 'auto' : category,
+      category: opts.auto || (isCurrent && !opts.forceCategory) ? 'auto' : category,
     });
   };
 
@@ -83,9 +83,10 @@ export function generateDemo(today: string): DemoPlan {
     add(m, 7, 'Inter', -9990, 'SMARTFIT', 'Saúde › Academia');
     if (!isCurrent) add(m, 3, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
     // Transferência para a Reserva: saída e entrada casadas.
+    // Em modo automático, com PIX no texto: a API liga as duas pontas sozinha.
     const transfer = 'Movimentação › Transferência entre contas';
-    add(m, 6, 'Inter', -50000, 'TRANSFERENCIA RESERVA', transfer, { forceCategory: true });
-    add(m, 6, 'Reserva', 50000, 'TRANSFERENCIA RESERVA', transfer, { forceCategory: true });
+    add(m, 6, 'Inter', -50000, 'PIX TRANSF RESERVA', transfer, { auto: true });
+    add(m, 6, 'Reserva', 50000, 'PIX TRANSF RECEBIDO', transfer, { auto: true });
 
     for (const day of [2, 9, 16, 23]) {
       const shop = rnd.next() < 0.5 ? 'CARREFOUR' : 'PAO DE ACUCAR';
@@ -214,7 +215,6 @@ export function generateDemo(today: string): DemoPlan {
       { pattern: 'POSTO SHELL', category: 'Transporte › Combustível' },
       { pattern: 'CINEMARK', category: 'Lazer › Cinema e eventos' },
       { pattern: 'BAR DO ZE', category: 'Lazer › Bares' },
-      { pattern: 'TRANSFERENCIA RESERVA', category: 'Movimentação › Transferência entre contas' },
     ],
     transactions: txs,
     budgets: [

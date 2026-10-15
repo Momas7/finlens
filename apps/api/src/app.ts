@@ -14,6 +14,7 @@ import { classificationRoutes } from './modules/classification/routes';
 import { goalRoutes } from './modules/goals/routes';
 import { healthRoutes } from './modules/health/routes';
 import { insightRoutes } from './modules/insights/routes';
+import { installmentRoutes } from './modules/installments/routes';
 import { meRoutes } from './modules/me/routes';
 import { recurrenceRoutes } from './modules/recurrences/routes';
 import { reviewRoutes } from './modules/review/routes';
@@ -75,6 +76,7 @@ export async function buildApp(deps: {
   await app.register(insightRoutes, { db });
   await app.register(transferRoutes, { db });
   await app.register(recurrenceRoutes, { db });
+  await app.register(installmentRoutes, { db });
   await app.register(goalRoutes, { db });
   await app.register(ruleSuggestionRoutes, { db });
 

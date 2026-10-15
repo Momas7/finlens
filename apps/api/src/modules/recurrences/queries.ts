@@ -17,8 +17,11 @@ import { inPeriod, notMovement } from '../analytics/aggregate';
 const HISTORY_MONTHS = 26;
 const MERCHANT_NAMES = new Map(MERCHANTS.map((m) => [m.key, m.name]));
 
-/** Saídas dos últimos 13 meses, sem movimentação (transferências e faturas ligadas ficam de fora). */
-export async function loadRecurrenceExpenses(tx: Tx, today: string): Promise<RecurrenceExpense[]> {
+type Installment = ReturnType<typeof normalize>['installment'];
+export type BaseExpense = RecurrenceExpense & { installment: Installment };
+
+/** Saídas dos últimos 26 meses, sem movimentação (transferências e faturas ligadas ficam de fora). */
+export async function loadExpenseBase(tx: Tx, today: string): Promise<BaseExpense[]> {
   let from = today.slice(0, 7) as Month;
   for (let i = 1; i < HISTORY_MONTHS; i++) from = previousMonth(from);
   const rows = await tx
@@ -36,21 +39,22 @@ export async function loadRecurrenceExpenses(tx: Tx, today: string): Promise<Rec
     .where(
       and(lt(transactions.amountCents, 0n), inPeriod(monthRange(from).from, today), notMovement),
     );
-  return (
-    rows
-      // Parcelas ("PARC 03/10") são de uma compra só, não de uma assinatura.
-      .filter((r) => normalize(r.description).installment === null)
-      .map((r) => ({
-        id: r.id,
-        postedDate: r.postedDate,
-        amountCents: -r.amountCents,
-        accountId: r.accountId,
-        description: r.description,
-        groupKey: r.merchantKey ? `m:${r.merchantKey}` : r.normalized ? `d:${r.normalized}` : null,
-        groupLabel:
-          (r.merchantKey && MERCHANT_NAMES.get(r.merchantKey)) || r.normalized || r.description,
-      }))
-  );
+  return rows.map((r) => ({
+    id: r.id,
+    postedDate: r.postedDate,
+    amountCents: -r.amountCents,
+    accountId: r.accountId,
+    description: r.description,
+    installment: normalize(r.description).installment,
+    groupKey: r.merchantKey ? `m:${r.merchantKey}` : r.normalized ? `d:${r.normalized}` : null,
+    groupLabel:
+      (r.merchantKey && MERCHANT_NAMES.get(r.merchantKey)) || r.normalized || r.description,
+  }));
+}
+
+/** Para recorrências: parcelas ("PARC 03/10") são de uma compra só, não de uma assinatura. */
+export async function loadRecurrenceExpenses(tx: Tx, today: string): Promise<RecurrenceExpense[]> {
+  return (await loadExpenseBase(tx, today)).filter((e) => e.installment === null);
 }
 
 /** Data do lançamento mais recente de cada conta (qualquer tipo). */

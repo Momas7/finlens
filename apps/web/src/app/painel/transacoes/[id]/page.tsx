@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { categoryLabels, categoryOptions } from '@/lib/categories';
 import { TransactionForm } from '../transaction-form';
 import { DeleteTransactionButton } from './delete-button';
+import { UnlinkButton } from './unlink-button';
 import { WhyPanel } from './why-panel';
 
 export default async function EditarTransacaoPage({
@@ -39,6 +40,18 @@ export default async function EditarTransacaoPage({
           ) ?? null
         }
       />
+      {transaction.transfer && (
+        <div className="max-w-xl space-y-2 border-t border-scale pt-6">
+          <p className="text-[15px] text-ink-soft">
+            Este lançamento é{' '}
+            {transaction.transfer.kind === 'card_payment'
+              ? 'um pagamento de fatura'
+              : 'uma transferência'}{' '}
+            com {transaction.transfer.withAccount} e fica fora de gastos e receitas.
+          </p>
+          <UnlinkButton id={transaction.id} withAccount={transaction.transfer.withAccount} />
+        </div>
+      )}
       <div className="max-w-xl border-t border-scale pt-6">
         <DeleteTransactionButton id={transaction.id} />
       </div>

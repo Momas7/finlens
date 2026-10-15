@@ -45,7 +45,7 @@ export default async function PainelLayout({ children }: { children: ReactNode }
         </div>
       </header>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10 lg:py-8">
-        <PainelNav reviewCount={review?.counts.needsYou ?? 0} />
+        <PainelNav reviewCount={(review?.counts.needsYou ?? 0) + (review?.counts.transfers ?? 0)} />
         <main className="min-w-0">{children}</main>
       </div>
     </div>

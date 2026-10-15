@@ -93,6 +93,37 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('revisão com transferência a confirmar', async ({ page }) => {
+      await signUp(page);
+      await createCheckingAccount(page);
+      await page.goto('/painel/contas/nova');
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      await page.getByLabel('Nome').fill('Reserva');
+      await page.getByLabel('Tipo').selectOption('savings');
+      await page.getByLabel('Saldo inicial').fill('0,00');
+      await page.getByLabel('Data do saldo').fill(`${today.slice(0, 7)}-01`);
+      await page.getByRole('button', { name: 'Salvar conta' }).click();
+      await expect(page).toHaveURL(/\/painel\/contas$/);
+      for (const [kind, account, desc] of [
+        ['Saída', 'Inter', 'ENVIO'],
+        ['Entrada', 'Reserva', 'ENTRADA'],
+      ] as const) {
+        await page.goto('/painel/transacoes/nova');
+        await page.getByRole('radio', { name: kind }).check();
+        await page.getByLabel('Conta').selectOption({ label: account });
+        await page.getByLabel('Valor').fill('40,00');
+        await page.getByLabel('Descrição').fill(desc);
+        await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+        await expect(page).toHaveURL(/\/painel\/transacoes$/);
+      }
+      await page.goto('/painel/revisao');
+      await expect(page.getByRole('region', { name: 'Transferências a confirmar' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

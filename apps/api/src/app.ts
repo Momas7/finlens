@@ -19,6 +19,7 @@ import { reviewRoutes } from './modules/review/routes';
 import { ruleSuggestionRoutes } from './modules/rule-suggestions/routes';
 import { ruleRoutes } from './modules/rules/routes';
 import { transactionRoutes } from './modules/transactions/routes';
+import { transferRoutes } from './modules/transfers/routes';
 import { authRoutes } from './plugins/auth-routes';
 import { tenantPlugin } from './plugins/tenant';
 
@@ -71,6 +72,7 @@ export async function buildApp(deps: {
   await app.register(analyticsRoutes, { db });
   await app.register(budgetRoutes, { db });
   await app.register(insightRoutes, { db });
+  await app.register(transferRoutes, { db });
   await app.register(goalRoutes, { db });
   await app.register(ruleSuggestionRoutes, { db });
 

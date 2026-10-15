@@ -65,9 +65,8 @@ describe('generateDemo', () => {
     expect(
       bakery.every((t) => t.category === 'Alimentação › Padaria' && t.postedDate < '2026-10-01'),
     ).toBe(true);
-    const transfers = plan.transactions.filter(
-      (t) => t.category === 'Movimentação › Transferência entre contas',
-    );
+    const transfers = plan.transactions.filter((t) => t.description.startsWith('PIX TRANSF'));
+    expect(transfers.every((t) => t.category === 'auto')).toBe(true);
     const out = transfers
       .filter((t) => t.account === 'Inter')
       .reduce((s, t) => s + Number(t.amountCents), 0);

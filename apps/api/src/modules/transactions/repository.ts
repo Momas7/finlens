@@ -1,4 +1,4 @@
-import type { Transaction, TransactionQuery } from '@finlens/contracts';
+import type { Transaction, TransactionQuery, TransactionTransfer } from '@finlens/contracts';
 import { categories, type Tx, transactions } from '@finlens/db';
 import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { ApiError } from '../../http/errors';
@@ -8,7 +8,10 @@ export const PAGE_SIZE = 50;
 
 type Row = typeof transactions.$inferSelect;
 
-export function toTransactionDto(row: Row): Transaction {
+export function toTransactionDto(
+  row: Row,
+  transfer: TransactionTransfer | null = null,
+): Transaction {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -26,6 +29,7 @@ export function toTransactionDto(row: Row): Transaction {
     classificationExplanation: row.classificationExplanation,
     suggestedCategoryId: row.suggestedCategoryId,
     merchantKey: row.merchantKey,
+    transfer,
   };
 }
 
@@ -71,7 +75,7 @@ export async function listTransactions(tx: Tx, query: TransactionQuery) {
   const page = rows.slice(0, PAGE_SIZE);
   const last = page.at(-1);
   return {
-    items: page.map(toTransactionDto),
+    rows: page,
     nextCursor: rows.length > PAGE_SIZE && last ? encodeCursor(last.postedDate, last.id) : null,
   };
 }

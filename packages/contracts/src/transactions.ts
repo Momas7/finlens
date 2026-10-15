@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ClassificationSource, ClassificationStatus } from './classification';
 import { Cents, IsoDate, NonZeroCents, Uuid } from './money';
+import { TransactionTransfer } from './transfers';
 
 const Description = z
   .string()
@@ -44,6 +45,7 @@ export const Transaction = z.object({
   classificationExplanation: z.string().nullable(),
   suggestedCategoryId: Uuid.nullable(),
   merchantKey: z.string().nullable(),
+  transfer: TransactionTransfer.nullable(),
 });
 export type Transaction = z.infer<typeof Transaction>;
 

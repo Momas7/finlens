@@ -57,7 +57,7 @@ describe('revisão, confirmação em lote e semelhantes', () => {
     await post({ amountCents: '-900', description: 'PADARIA SAO JOAO' });
     await post({ amountCents: '150000', description: 'PIX RECEBIDO MARIA' });
     const r = await review();
-    expect(r.counts).toEqual({ needsYou: 4, likely: 2 });
+    expect(r.counts).toEqual({ needsYou: 4, likely: 2, transfers: 0 });
     expect(
       r.needsYou.map((g: { label: string; count: number; sign: string }) => [
         g.label,

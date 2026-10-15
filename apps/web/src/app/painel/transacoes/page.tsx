@@ -29,6 +29,14 @@ function ClassificationMarker({
   labels: Map<string, string>;
 }) {
   const status = transaction.classificationStatus;
+  if (transaction.transfer) {
+    const { kind, withAccount } = transaction.transfer;
+    return (
+      <span className="block text-[12px] text-ink-soft">
+        {kind === 'card_payment' ? 'Pagamento de fatura' : 'Transferência'} com {withAccount}
+      </span>
+    );
+  }
   const text =
     status === 'suggested' && transaction.suggestedCategoryId
       ? `sugestão: ${labels.get(transaction.suggestedCategoryId) ?? 'categoria arquivada'}`

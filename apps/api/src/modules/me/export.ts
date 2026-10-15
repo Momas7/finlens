@@ -9,6 +9,7 @@ import {
   ruleSuggestionDismissals,
   type Tx,
   transactions,
+  transferDismissals,
 } from '@finlens/db';
 import { type CsvTransaction, transactionsCsv } from '@finlens/domain';
 import { asc } from 'drizzle-orm';
@@ -46,6 +47,7 @@ export async function exportData(
     budgetRows,
     goalRows,
     insightRows,
+    transferDismissalRows,
   ] = await Promise.all([
     tx.select().from(financialAccounts).orderBy(asc(financialAccounts.createdAt)),
     tx.select().from(categories),
@@ -56,6 +58,7 @@ export async function exportData(
     tx.select().from(budgets),
     tx.select().from(goals),
     tx.select().from(insightStates),
+    tx.select().from(transferDismissals),
   ]);
   return {
     format: 'finlens-export/1',
@@ -71,6 +74,7 @@ export async function exportData(
     budgets: all(budgetRows),
     goals: all(goalRows),
     insightStates: all(insightRows),
+    transferDismissals: all(transferDismissalRows),
   };
 }
 

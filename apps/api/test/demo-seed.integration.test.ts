@@ -33,6 +33,12 @@ describe('seed da demo', () => {
     const suggestions: { pattern: string }[] = await get('/v1/rule-suggestions');
     expect(suggestions.map((s) => s.pattern)).toContain('PADARIA SAO JOAO');
 
+    // As transferências para a Reserva foram ligadas sozinhas, nos dois lados.
+    const list: { items: { description: string; transfer: { withAccount: string } | null }[] } =
+      await get('/v1/transactions?q=PIX%20TRANSF');
+    expect(list.items.length).toBeGreaterThan(0);
+    expect(list.items.every((i) => i.transfer !== null)).toBe(true);
+
     expect(await runDemoSeed(injectClient(t.app), plan)).toEqual({ created: false });
   });
 

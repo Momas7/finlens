@@ -113,6 +113,20 @@
       "when": 1791550328552,
       "tag": "0015_goals_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792062874697,
+      "tag": "0016_chilly_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792062876011,
+      "tag": "0017_transfer_dismissals_rls",
+      "breakpoints": true
     }
   ]
 }

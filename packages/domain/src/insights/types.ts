@@ -1,5 +1,6 @@
 import type { Month } from '../analytics/month';
 import type { BudgetState } from '../budgets/budget';
+import type { Recurrence } from '../recurrences/detect';
 
 export type InsightSeverity = 'info' | 'warning';
 export type InsightKind =
@@ -9,7 +10,10 @@ export type InsightKind =
   | 'fees'
   | 'duplicate'
   | 'budget_pace'
-  | 'savings';
+  | 'savings'
+  | 'recurrence_missing'
+  | 'price_increase'
+  | 'new_subscription';
 
 /** Saída (valor absoluto), sem movimentação, do mês corrente ou dos 6 anteriores. */
 export type InsightExpense = {
@@ -46,6 +50,8 @@ export type InsightContext = {
   /** Dos 6 meses fechados, os que tiveram qualquer lançamento. */
   activeMonths: Month[];
   budgets: InsightBudget[];
+  /** Cobranças recorrentes detectadas nos últimos 13 meses. */
+  recurrences: Recurrence[];
 };
 
 export type InsightCandidate = {

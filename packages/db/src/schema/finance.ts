@@ -112,6 +112,8 @@ export const transactions = pgTable(
     classificationConfidence: numeric({ precision: 4, scale: 3, mode: 'number' }),
     classificationExplanation: text(),
     suggestedCategoryId: uuid(),
+    /** Mesmo id nas duas pontas de uma transferência ou pagamento de fatura. */
+    transferPairId: uuid(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true })
       .notNull()
@@ -119,6 +121,9 @@ export const transactions = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    index('transactions_workspace_pair_idx')
+      .on(t.workspaceId, t.transferPairId)
+      .where(sql`${t.transferPairId} is not null`),
     foreignKey({
       name: 'transactions_account_fk',
       columns: [t.workspaceId, t.accountId],
@@ -308,4 +313,16 @@ export const goals = pgTable(
     ),
     check('goals_name_check', sql`char_length(${t.name}) between 1 and 60`),
   ],
+);
+
+/** Pares de lançamentos que a pessoa disse que não são transferência; não voltam a ser sugeridos. */
+export const transferDismissals = pgTable(
+  'transfer_dismissals',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    pairKey: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique('transfer_dismissals_workspace_pair_key').on(t.workspaceId, t.pairKey)],
 );

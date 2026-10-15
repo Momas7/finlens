@@ -121,3 +121,12 @@ export async function applyToSimilar(
   revalidatePath('/painel', 'layout');
   redirect(await backFromSimilar(from));
 }
+
+/** Desfaz o par de transferência e volta à lista. */
+export async function unlinkTransfer(rawId: string): Promise<void> {
+  const id = parseId(rawId);
+  if (!id) redirect('/painel/transacoes');
+  await guard(() => apiSend('POST', `/v1/transactions/${id}/unlink`));
+  revalidatePath('/painel', 'layout');
+  redirect('/painel/transacoes');
+}

@@ -1,4 +1,10 @@
-import { CategoryTree, Review, type ReviewGroup, RuleSuggestionList } from '@finlens/contracts';
+import {
+  CategoryTree,
+  Review,
+  type ReviewGroup,
+  RuleSuggestionList,
+  TransferSuggestionList,
+} from '@finlens/contracts';
 import Link from 'next/link';
 import { Panel } from '@/components/ui/panel';
 import { Scale } from '@/components/ui/scale';
@@ -8,6 +14,7 @@ import { formatCents } from '@/lib/money';
 import { groupHeadingId } from '@/lib/review';
 import { GroupForm } from './group-form';
 import { RuleSuggestionItem } from './rule-suggestion';
+import { TransferSuggestionItem } from './transfer-suggestions';
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
@@ -101,14 +108,16 @@ function GroupSection({
 }
 
 export default async function RevisaoPage() {
-  const [review, suggestions, tree] = await Promise.all([
+  const [review, suggestions, transfers, tree] = await Promise.all([
     apiFetch('/v1/review', Review),
     apiFetch('/v1/rule-suggestions', RuleSuggestionList),
+    apiFetch('/v1/transfers/suggestions', TransferSuggestionList),
     apiFetch('/v1/categories', CategoryTree),
   ]);
   const labels = categoryLabels(tree);
   const groups = categoryOptions(tree);
-  const empty = review.needsYou.length === 0 && review.likely.length === 0;
+  const empty =
+    review.needsYou.length === 0 && review.likely.length === 0 && transfers.length === 0;
   return (
     <div className="space-y-8">
       <div>
@@ -117,6 +126,22 @@ export default async function RevisaoPage() {
           Lançamentos parecidos aparecem juntos. Confirmar ensina o Finlens a acertar os próximos.
         </p>
       </div>
+
+      {transfers.length > 0 && (
+        <Panel as="section" aria-labelledby="transfer-suggestions" className="px-5 pt-5 pb-2">
+          <h2 id="transfer-suggestions" className="font-semibold">
+            Transferências a confirmar
+          </h2>
+          <p className="mt-1 text-[13px] text-ink-soft">
+            Duas pontas com valores iguais e opostos. Confirmadas, saem de gastos e receitas.
+          </p>
+          <ul className="divide-y divide-scale">
+            {transfers.map((t) => (
+              <TransferSuggestionItem key={t.id} suggestion={t} />
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       {suggestions.length > 0 && (
         <Panel as="section" aria-labelledby="rule-suggestions" className="px-5 pt-5 pb-2">

@@ -25,13 +25,27 @@ describe('seed da demo', () => {
     expect(review.counts.needsYou).toBeGreaterThan(0);
     const insights: { items: { kind: string }[] } = await get('/v1/insights');
     const kinds = insights.items.map((i) => i.kind);
-    expect(kinds).toEqual(expect.arrayContaining(['duplicate', 'anomaly', 'fees']));
+    expect(kinds).toEqual(
+      expect.arrayContaining([
+        'duplicate',
+        'anomaly',
+        'fees',
+        'price_increase',
+        'new_subscription',
+      ]),
+    );
     const budgets: { items: { label: string; state: string | null }[] } = await get('/v1/budgets');
     expect(budgets.items.find((i) => i.label === 'Lazer')?.state).toBe('over');
     const goals: { name: string }[] = await get('/v1/goals');
     expect(goals.map((g) => g.name)).toEqual(['Reserva de emergência']);
     const suggestions: { pattern: string }[] = await get('/v1/rule-suggestions');
     expect(suggestions.map((s) => s.pattern)).toContain('PADARIA SAO JOAO');
+
+    // As transferências para a Reserva foram ligadas sozinhas, nos dois lados.
+    const list: { items: { description: string; transfer: { withAccount: string } | null }[] } =
+      await get('/v1/transactions?q=PIX%20TRANSF');
+    expect(list.items.length).toBeGreaterThan(0);
+    expect(list.items.every((i) => i.transfer !== null)).toBe(true);
 
     expect(await runDemoSeed(injectClient(t.app), plan)).toEqual({ created: false });
   });

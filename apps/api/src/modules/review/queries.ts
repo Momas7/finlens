@@ -2,6 +2,7 @@ import type { Review, ReviewGroup } from '@finlens/contracts';
 import { type Tx, transactions } from '@finlens/db';
 import { MERCHANTS } from '@finlens/domain';
 import { desc, inArray } from 'drizzle-orm';
+import { loadSuggestions } from '../transfers/queries';
 
 const MAX_GROUPS = 100;
 const MAX_IDS = 200;
@@ -65,7 +66,7 @@ function toGroups(rows: Row[], categoryOf: (r: Row) => string | null): ReviewGro
 }
 
 /** Pendentes agrupados: sugestão/sem categoria ("precisam de você") e prováveis. */
-export async function loadReview(tx: Tx): Promise<Review> {
+export async function loadReview(tx: Tx, today: string): Promise<Review> {
   const rows = await tx
     .select()
     .from(transactions)
@@ -76,6 +77,10 @@ export async function loadReview(tx: Tx): Promise<Review> {
   return {
     needsYou: toGroups(needsYou, (r) => r.suggestedCategoryId),
     likely: toGroups(likely, (r) => r.categoryId),
-    counts: { needsYou: needsYou.length, likely: likely.length },
+    counts: {
+      needsYou: needsYou.length,
+      likely: likely.length,
+      transfers: (await loadSuggestions(tx, today)).length,
+    },
   };
 }

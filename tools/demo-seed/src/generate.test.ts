@@ -41,7 +41,7 @@ describe('generateDemo', () => {
 
   it('planta duplicata, valor fora do padrão, tarifas e revisão', () => {
     const now = inMonth(plan.transactions, '2026-10');
-    const netflix = now.filter((t) => t.description === 'NETFLIX' && t.amountCents === '-5590');
+    const netflix = now.filter((t) => t.description === 'NETFLIX' && t.amountCents === '-5990');
     expect(netflix).toHaveLength(2);
     const shell = plan.transactions.filter((t) => t.description === 'POSTO SHELL');
     const before = shell.filter((t) => t.postedDate < '2026-10-01');
@@ -65,9 +65,8 @@ describe('generateDemo', () => {
     expect(
       bakery.every((t) => t.category === 'Alimentação › Padaria' && t.postedDate < '2026-10-01'),
     ).toBe(true);
-    const transfers = plan.transactions.filter(
-      (t) => t.category === 'Movimentação › Transferência entre contas',
-    );
+    const transfers = plan.transactions.filter((t) => t.description.startsWith('PIX TRANSF'));
+    expect(transfers.every((t) => t.category === 'auto')).toBe(true);
     const out = transfers
       .filter((t) => t.account === 'Inter')
       .reduce((s, t) => s + Number(t.amountCents), 0);
@@ -76,6 +75,13 @@ describe('generateDemo', () => {
       .reduce((s, t) => s + Number(t.amountCents), 0);
     expect(out).toBe(-inn);
     expect(inn).toBeGreaterThan(0);
+  });
+
+  it('Spotify novo (3 cobranças a cada 28 dias) e Netflix mais cara', () => {
+    const spotify = plan.transactions.filter((t) => t.description === 'SPOTIFY AB');
+    expect(spotify.map((t) => t.postedDate)).toEqual(['2026-08-12', '2026-09-09', '2026-10-07']);
+    const netflix = plan.transactions.filter((t) => t.description === 'NETFLIX');
+    expect(netflix.filter((t) => t.amountCents === '-5590').length).toBeGreaterThanOrEqual(5);
   });
 
   it('orçamento de Lazer estourado e meta na Reserva', () => {

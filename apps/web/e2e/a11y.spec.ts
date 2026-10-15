@@ -93,6 +93,59 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('revisão com transferência a confirmar', async ({ page }) => {
+      await signUp(page);
+      await createCheckingAccount(page);
+      await page.goto('/painel/contas/nova');
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      await page.getByLabel('Nome').fill('Reserva');
+      await page.getByLabel('Tipo').selectOption('savings');
+      await page.getByLabel('Saldo inicial').fill('0,00');
+      await page.getByLabel('Data do saldo').fill(`${today.slice(0, 7)}-01`);
+      await page.getByRole('button', { name: 'Salvar conta' }).click();
+      await expect(page).toHaveURL(/\/painel\/contas$/);
+      for (const [kind, account, desc] of [
+        ['Saída', 'Inter', 'ENVIO'],
+        ['Entrada', 'Reserva', 'ENTRADA'],
+      ] as const) {
+        await page.goto('/painel/transacoes/nova');
+        await page.getByRole('radio', { name: kind }).check();
+        await page.getByLabel('Conta').selectOption({ label: account });
+        await page.getByLabel('Valor').fill('40,00');
+        await page.getByLabel('Descrição').fill(desc);
+        await page.getByRole('button', { name: 'Salvar lançamento' }).click();
+        await expect(page).toHaveURL(/\/painel\/transacoes$/);
+      }
+      await page.goto('/painel/revisao');
+      await expect(page.getByRole('region', { name: 'Transferências a confirmar' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
+    test('/painel/recorrencias', async ({ page }) => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      const ago = (n: number) =>
+        new Date(Date.parse(`${today}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+      await signUp(page);
+      await createCheckingAccount(page);
+      test.setTimeout(120_000);
+      for (const k of [2, 1, 0]) {
+        await addExpense(page, 'SPOTIFY AB', '21,90', undefined, ago(3 + 28 * k));
+        await addExpense(page, 'SMARTFIT', '99,90', undefined, ago(45 + 30 * k));
+        await addExpense(page, 'CLUBE DO LIVRO', '39,90', undefined, ago(100 + 30 * k));
+      }
+      await addExpense(page, 'PADARIA', '15,00', undefined, ago(1));
+      await page.goto('/painel/recorrencias');
+      await page.getByText(/^Encerradas/).click();
+      await expect(page.getByRole('list', { name: 'Cobranças recorrentes' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

@@ -11,9 +11,10 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError, notFound } from '../../http/errors';
 import { findAccount } from '../accounts/repository';
+import { autoLinkFor, releasePartner, withTransfers } from '../transfers/queries';
 import { type CategoryDecision, categorize, recordFeedback } from './categorize';
 import { confirmTransactions } from './confirm';
-import { categoryExists, findTransaction, listTransactions, toTransactionDto } from './repository';
+import { categoryExists, findTransaction, listTransactions } from './repository';
 import { findSimilar } from './similar';
 
 function transactionId(request: FastifyRequest): string {
@@ -49,7 +50,10 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
 
   app.get('/v1/transactions', auth, async (request) => {
     const query = TransactionQuery.parse(request.query);
-    return withTenant(opts.db, request.tenant, (tx) => listTransactions(tx, query));
+    return withTenant(opts.db, request.tenant, async (tx) => {
+      const { rows, nextCursor } = await listTransactions(tx, query);
+      return { items: await withTransfers(tx, rows), nextCursor };
+    });
   });
 
   app.post('/v1/transactions/confirm', auth, async (request) => {
@@ -72,9 +76,11 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
 
   app.get('/v1/transactions/:id', auth, async (request) => {
     const id = transactionId(request);
-    const row = await withTenant(opts.db, request.tenant, (tx) => findTransaction(tx, id));
-    if (!row) throw notFound('Lançamento');
-    return toTransactionDto(row);
+    return withTenant(opts.db, request.tenant, async (tx) => {
+      const row = await findTransaction(tx, id);
+      if (!row) throw notFound('Lançamento');
+      return (await withTransfers(tx, [row]))[0];
+    });
   });
 
   app.post('/v1/transactions', auth, async (request, reply) => {
@@ -108,10 +114,13 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
           ...fields,
         })
         .returning();
-      if (row) await recordFeedback(tx, request.tenant.workspaceId, row.id, feedback);
-      return row;
+      if (!row) return undefined;
+      await recordFeedback(tx, request.tenant.workspaceId, row.id, feedback);
+      await autoLinkFor(tx, request.tenant.workspaceId, row.id);
+      const fresh = await findTransaction(tx, row.id);
+      return fresh && (await withTransfers(tx, [fresh]))[0];
     });
-    return reply.status(201).send(created && toTransactionDto(created));
+    return reply.status(201).send(created);
   });
 
   app.patch('/v1/transactions/:id', auth, async (request) => {
@@ -146,6 +155,12 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
       } else if (current.classificationStatus === 'confirmed' || !inputsChanged) decision = 'keep';
       else decision = 'auto';
 
+      // Mudar valor ou conta de uma ponta desfaz o par (a outra ponta fica solta).
+      const pairBroken =
+        current.transferPairId !== null &&
+        (amountCents !== current.amountCents || accountId !== current.accountId);
+      if (pairBroken) await releasePartner(tx, current);
+
       const { fields, feedback } = await categorize(tx, decision, {
         description,
         amountCents,
@@ -161,19 +176,25 @@ export async function transactionRoutes(app: FastifyInstance, opts: { db: Db }) 
           amountCents,
           statementMonth: month,
           ...(input.notes !== undefined && { notes: input.notes }),
+          ...(pairBroken && { transferPairId: null }),
           ...fields,
         })
         .where(eq(transactions.id, id))
         .returning();
       if (!row) throw notFound('Lançamento');
       await recordFeedback(tx, request.tenant.workspaceId, id, feedback);
-      return toTransactionDto(row);
+      await autoLinkFor(tx, request.tenant.workspaceId, id);
+      const fresh = await findTransaction(tx, id);
+      if (!fresh) throw notFound('Lançamento');
+      return (await withTransfers(tx, [fresh]))[0];
     });
   });
 
   app.delete('/v1/transactions/:id', auth, async (request, reply) => {
     const id = transactionId(request);
     await withTenant(opts.db, request.tenant, async (tx) => {
+      const current = await findTransaction(tx, id);
+      if (current) await releasePartner(tx, current);
       const deleted = await tx
         .delete(transactions)
         .where(eq(transactions.id, id))

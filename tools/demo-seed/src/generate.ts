@@ -40,6 +40,8 @@ export type DemoPlan = {
 
 const MONTHS = 6;
 const pad = (n: number) => String(n).padStart(2, '0');
+const addDays = (date: string, n: number) =>
+  new Date(Date.parse(`${date}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const lastDay = (m: Month) => Number(monthRange(m).to.slice(8));
 
 /** Seis meses de vida financeira fictícia, relativos a `today`, com casos plantados para cada tela. */
@@ -57,7 +59,7 @@ export function generateDemo(today: string): DemoPlan {
     cents: number,
     description: string,
     category: string,
-    opts: { forceCategory?: boolean } = {},
+    opts: { forceCategory?: boolean; auto?: boolean } = {},
   ) => {
     const isCurrent = m === current;
     const d = Math.min(day, lastDay(m));
@@ -68,7 +70,7 @@ export function generateDemo(today: string): DemoPlan {
       amountCents: String(cents),
       description,
       // Meses fechados ficam confirmados (alimentam o histórico); o mês corrente fica no automático.
-      category: isCurrent && !opts.forceCategory ? 'auto' : category,
+      category: opts.auto || (isCurrent && !opts.forceCategory) ? 'auto' : category,
     });
   };
 
@@ -83,9 +85,10 @@ export function generateDemo(today: string): DemoPlan {
     add(m, 7, 'Inter', -9990, 'SMARTFIT', 'Saúde › Academia');
     if (!isCurrent) add(m, 3, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
     // Transferência para a Reserva: saída e entrada casadas.
+    // Em modo automático, com PIX no texto: a API liga as duas pontas sozinha.
     const transfer = 'Movimentação › Transferência entre contas';
-    add(m, 6, 'Inter', -50000, 'TRANSFERENCIA RESERVA', transfer, { forceCategory: true });
-    add(m, 6, 'Reserva', 50000, 'TRANSFERENCIA RESERVA', transfer, { forceCategory: true });
+    add(m, 6, 'Inter', -50000, 'PIX TRANSF RESERVA', transfer, { auto: true });
+    add(m, 6, 'Reserva', 50000, 'PIX TRANSF RECEBIDO', transfer, { auto: true });
 
     for (const day of [2, 9, 16, 23]) {
       const shop = rnd.next() < 0.5 ? 'CARREFOUR' : 'PAO DE ACUCAR';
@@ -152,8 +155,19 @@ export function generateDemo(today: string): DemoPlan {
       description,
       category,
     });
-  plant(dup1, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
-  plant(dup2, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  // A Netflix subiu de R$ 55,90 para R$ 59,90 (aumento de preço) e foi cobrada duas vezes.
+  plant(dup1, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  plant(dup2, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  // Spotify novo: três cobranças a cada 28 dias, a mais antiga há 59 dias.
+  for (const ago of [59, 31, 3]) {
+    txs.push({
+      account: 'Mercado Pago',
+      postedDate: addDays(today, -ago),
+      amountCents: '-2190',
+      description: 'SPOTIFY AB',
+      category: 'Assinaturas › Música',
+    });
+  }
   plant(at(8), 'Inter', -48000, 'POSTO SHELL', 'Transporte › Combustível');
   plant(at(2), 'Inter', -3200, 'TARIFA PACOTE SERVICOS', 'Financeiro › Tarifas');
   plant(at(9), 'Mercado Pago', -412, 'IOF COMPRA INTERNACIONAL', 'Financeiro › IOF');
@@ -214,7 +228,6 @@ export function generateDemo(today: string): DemoPlan {
       { pattern: 'POSTO SHELL', category: 'Transporte › Combustível' },
       { pattern: 'CINEMARK', category: 'Lazer › Cinema e eventos' },
       { pattern: 'BAR DO ZE', category: 'Lazer › Bares' },
-      { pattern: 'TRANSFERENCIA RESERVA', category: 'Movimentação › Transferência entre contas' },
     ],
     transactions: txs,
     budgets: [

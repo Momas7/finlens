@@ -25,7 +25,15 @@ describe('seed da demo', () => {
     expect(review.counts.needsYou).toBeGreaterThan(0);
     const insights: { items: { kind: string }[] } = await get('/v1/insights');
     const kinds = insights.items.map((i) => i.kind);
-    expect(kinds).toEqual(expect.arrayContaining(['duplicate', 'anomaly', 'fees']));
+    expect(kinds).toEqual(
+      expect.arrayContaining([
+        'duplicate',
+        'anomaly',
+        'fees',
+        'price_increase',
+        'new_subscription',
+      ]),
+    );
     const budgets: { items: { label: string; state: string | null }[] } = await get('/v1/budgets');
     expect(budgets.items.find((i) => i.label === 'Lazer')?.state).toBe('over');
     const goals: { name: string }[] = await get('/v1/goals');

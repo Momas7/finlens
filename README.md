@@ -42,9 +42,13 @@ Cada lançamento é classificado ao ser salvo, com a confiança e o motivo. O qu
 
 Quando duas pontas têm valores iguais e opostos em contas diferentes (uma transferência para a poupança, o pagamento da fatura do cartão), o Finlens liga as duas e as tira de gastos e receitas. Liga sozinho só o óbvio (PIX, TED, fatura ou o nome da outra conta no texto, até 1 dia, sem ambiguidade); o resto vira sugestão na Revisão.
 
+### Recorrências
+
+O histórico de saídas revela o que se repete (assinaturas, aluguel, planos): cadência, valor típico, próxima cobrança e custo mensal equivalente. A tela mostra o total por mês e três avisos entram nos insights: cobrança que não veio, aumento de preço e assinatura nova. Tudo é calculado na hora, sem cadastro.
+
 ### Insights
 
-Sete geradores puros olham o mês corrente:
+Dez geradores puros olham o mês corrente:
 
 - categoria acima do normal até o mesmo dia do mês;
 - pequenas compras que se somam;
@@ -52,7 +56,8 @@ Sete geradores puros olham o mês corrente:
 - tarifas, juros e IOF;
 - possível cobrança duplicada;
 - orçamento estourando;
-- queda na taxa de poupança.
+- queda na taxa de poupança;
+- cobrança recorrente que não veio, aumento de preço e assinatura nova.
 
 Cada insight traz o impacto em reais e uma ação. Dispensado, não volta.
 
@@ -160,7 +165,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F6a | Demo de um comando e esta vitrine | ✅ |
 | F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima (aguardando extratos reais para validar os parsers) |
 | F3a | Transferências e pagamento de fatura (ligação automática e sugestões) | ✅ |
-| F3b | Recorrências e assinaturas | planejada |
+| F3b | Recorrências e assinaturas (cobrança que não veio, aumento de preço) | ✅ |
 | F3c | Parcelas e compromisso futuro | planejada |
 | F6b | Exportar e excluir os próprios dados | ✅ |
 | — | LLM opcional como último recurso da classificação | planejada |

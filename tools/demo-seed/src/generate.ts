@@ -40,6 +40,8 @@ export type DemoPlan = {
 
 const MONTHS = 6;
 const pad = (n: number) => String(n).padStart(2, '0');
+const addDays = (date: string, n: number) =>
+  new Date(Date.parse(`${date}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const lastDay = (m: Month) => Number(monthRange(m).to.slice(8));
 
 /** Seis meses de vida financeira fictícia, relativos a `today`, com casos plantados para cada tela. */
@@ -153,8 +155,19 @@ export function generateDemo(today: string): DemoPlan {
       description,
       category,
     });
-  plant(dup1, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
-  plant(dup2, 'Inter', -5590, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  // A Netflix subiu de R$ 55,90 para R$ 59,90 (aumento de preço) e foi cobrada duas vezes.
+  plant(dup1, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  plant(dup2, 'Inter', -5990, 'NETFLIX', 'Assinaturas › Streaming de vídeo');
+  // Spotify novo: três cobranças a cada 28 dias, a mais antiga há 59 dias.
+  for (const ago of [59, 31, 3]) {
+    txs.push({
+      account: 'Mercado Pago',
+      postedDate: addDays(today, -ago),
+      amountCents: '-2190',
+      description: 'SPOTIFY AB',
+      category: 'Assinaturas › Música',
+    });
+  }
   plant(at(8), 'Inter', -48000, 'POSTO SHELL', 'Transporte › Combustível');
   plant(at(2), 'Inter', -3200, 'TARIFA PACOTE SERVICOS', 'Financeiro › Tarifas');
   plant(at(9), 'Mercado Pago', -412, 'IOF COMPRA INTERNACIONAL', 'Financeiro › IOF');

@@ -18,7 +18,12 @@ export type ReviewGroup = z.infer<typeof ReviewGroup>;
 export const Review = z.object({
   needsYou: z.array(ReviewGroup),
   likely: z.array(ReviewGroup),
-  counts: z.object({ needsYou: z.number().int(), likely: z.number().int() }),
+  counts: z.object({
+    needsYou: z.number().int(),
+    likely: z.number().int(),
+    /** Pares de transferência esperando confirmação. */
+    transfers: z.number().int(),
+  }),
 });
 export type Review = z.infer<typeof Review>;
 

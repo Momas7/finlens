@@ -49,7 +49,10 @@ export function TransferSuggestionItem({ suggestion: s }: { suggestion: Transfer
           disabled={pending}
           onClick={() => run(() => linkTransfer(s.a.id, s.b.id))}
         >
-          É transferência
+          {s.kind === 'card_payment' ? 'É pagamento de fatura' : 'É transferência'}
+          <span className="sr-only">
+            : {s.a.description} em {s.a.accountName} e {s.b.description} em {s.b.accountName}
+          </span>
         </Button>
         <Button
           size="sm"
@@ -58,6 +61,10 @@ export function TransferSuggestionItem({ suggestion: s }: { suggestion: Transfer
           onClick={() => run(() => dismissTransfer(s.id))}
         >
           Não é
+          <span className="sr-only">
+            {' '}
+            {label.toLowerCase()}: {s.a.description} e {s.b.description}
+          </span>
         </Button>
       </div>
     </li>

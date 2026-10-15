@@ -20,7 +20,8 @@ import { toTransactionDto } from '../transactions/repository';
 
 const WINDOW_DAYS = 12;
 const MAX_SUGGESTIONS = 20;
-const NEIGHBOR_DAYS = 2;
+// 2 dias da possível contraparte + 2 dias das contrapartes dela: o bastante para contar ambiguidade.
+const NEIGHBOR_DAYS = 4;
 
 type Row = typeof transactions.$inferSelect;
 
@@ -62,6 +63,17 @@ const open = and(
 export async function autoLinkFor(tx: Tx, workspaceId: string, id: string): Promise<void> {
   const [row] = await tx.select().from(transactions).where(eq(transactions.id, id));
   if (!row || row.transferPairId || row.classificationStatus === 'confirmed') return;
+  // Sem a categoria de movimentação (arquivada), não liga: salvar o lançamento não pode falhar por isso.
+  const hasCategories = await tx
+    .select({ id: categories.id })
+    .from(categories)
+    .where(
+      and(
+        inArray(categories.systemKey, ['movement.transfer', 'movement.card_payment']),
+        isNull(categories.archivedAt),
+      ),
+    );
+  if (hasCategories.length < 2) return;
   const neighbors = await tx
     .select()
     .from(transactions)
@@ -103,7 +115,6 @@ async function movementCategory(tx: Tx, kind: 'transfer' | 'card_payment'): Prom
 
 /** Valida e liga as duas pontas (a: saída, b: entrada). */
 async function linkRows(tx: Tx, _workspaceId: string, aId: string, bId: string): Promise<void> {
-  if (aId === bId) throw new ApiError(409, 'conflict', 'Escolha dois lançamentos diferentes.');
   const rows = await tx
     .select()
     .from(transactions)
@@ -125,10 +136,14 @@ async function linkRows(tx: Tx, _workspaceId: string, aId: string, bId: string):
   if (types.every((t) => t === 'credit_card')) {
     throw new ApiError(409, 'conflict', 'Dois cartões não formam uma transferência.');
   }
+  // Compra no cartão (saída do cartão) não é ponta de pagamento de fatura.
+  if (types[0] === 'credit_card') {
+    throw new ApiError(409, 'conflict', 'Uma compra no cartão não pode ser uma das pontas.');
+  }
   const kind = types.includes('credit_card') ? 'card_payment' : 'transfer';
   const categoryId = await movementCategory(tx, kind);
   const pair = randomUUID();
-  await tx
+  const updated = await tx
     .update(transactions)
     .set({
       transferPairId: pair,
@@ -139,10 +154,16 @@ async function linkRows(tx: Tx, _workspaceId: string, aId: string, bId: string):
       classificationConfidence: 1,
       classificationExplanation: null,
     })
-    .where(inArray(transactions.id, [aId, bId]));
+    // Atômico: duas ligações simultâneas com uma ponta em comum não passam as duas.
+    .where(and(inArray(transactions.id, [aId, bId]), isNull(transactions.transferPairId)))
+    .returning({ id: transactions.id });
+  if (updated.length !== 2) {
+    throw new ApiError(409, 'conflict', 'Um dos lançamentos já faz parte de uma transferência.');
+  }
 }
 
 export async function linkPair(tx: Tx, workspaceId: string, aId: string, bId: string) {
+  if (aId === bId) throw new ApiError(409, 'conflict', 'Escolha dois lançamentos diferentes.');
   // A API recebe as pontas em qualquer ordem; a saída é a de valor negativo.
   const rows = await tx
     .select({ id: transactions.id, amount: transactions.amountCents })
@@ -164,6 +185,19 @@ export async function unlinkPair(tx: Tx, id: string): Promise<void> {
     .select()
     .from(transactions)
     .where(eq(transactions.transferPairId, row.transferPairId));
+  // Desfazer vale como "não é": sem isso a próxima edição ligaria o mesmo par de novo.
+  if (both.length === 2) {
+    await tx
+      .insert(transferDismissals)
+      .values({
+        workspaceId: row.workspaceId,
+        pairKey: both
+          .map((r) => r.id)
+          .sort()
+          .join(':'),
+      })
+      .onConflictDoNothing();
+  }
   for (const r of both) {
     const { fields } = await categorize(tx, 'auto', {
       description: r.description,

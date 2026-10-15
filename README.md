@@ -40,7 +40,7 @@ Cada lançamento é classificado ao ser salvo, com a confiança e o motivo. O qu
 
 ### Transferências
 
-Quando duas pontas têm valores iguais e opostos em contas diferentes (uma transferência para a poupança, o pagamento da fatura do cartão), o Finlens liga as duas e as tira de gastos e receitas. Liga sozinho só o óbvio (PIX ou TED no texto, até 1 dia, sem ambiguidade); o resto vira sugestão na Revisão.
+Quando duas pontas têm valores iguais e opostos em contas diferentes (uma transferência para a poupança, o pagamento da fatura do cartão), o Finlens liga as duas e as tira de gastos e receitas. Liga sozinho só o óbvio (PIX, TED, fatura ou o nome da outra conta no texto, até 1 dia, sem ambiguidade); o resto vira sugestão na Revisão.
 
 ### Insights
 

@@ -1,4 +1,4 @@
-import { todayInSaoPaulo } from '@finlens/domain';
+import { previousMonth, todayInSaoPaulo } from '@finlens/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp, type TestApp } from './helpers';
 
@@ -177,6 +177,64 @@ describe('transferências e pagamento de fatura', () => {
     expect(
       (await b.who({ method: 'POST', url: `/v1/transactions/${out.id}/unlink` })).statusCode,
     ).toBe(404);
+  });
+
+  it('trio ambíguo espalhado em 4 dias nunca liga sozinho', async () => {
+    const { who, inter, reserva, add, one } = await setup();
+    const nubank = (
+      await who({
+        method: 'POST',
+        url: '/v1/accounts',
+        payload: { name: 'Nubank', type: 'checking', openingBalanceDate: '2025-01-01' },
+      })
+    ).json().id as string;
+    const prev = previousMonth(current);
+    const y = await add(reserva, '10000', 'PIX', `${prev}-10`);
+    const z = await add(nubank, '-10000', 'PIX', `${prev}-12`);
+    // X está a 1 dia de Y (par possível), mas Z também é contraparte de Y: ambíguo.
+    const x = await add(inter, '-10000', 'PIX', `${prev}-09`);
+    for (const tx of [x, y, z]) expect((await one(tx.id)).transfer).toBeNull();
+  });
+
+  it('desfazer não deixa o par voltar sozinho na próxima edição', async () => {
+    const { who, inter, reserva, add, one } = await setup();
+    const a = await add(inter, '-6000', 'PIX');
+    await add(reserva, '6000', 'PIX');
+    expect((await one(a.id)).transfer).not.toBeNull();
+    await who({ method: 'POST', url: `/v1/transactions/${a.id}/unlink` });
+    await who({
+      method: 'PATCH',
+      url: `/v1/transactions/${a.id}`,
+      payload: { notes: 'só uma nota' },
+    });
+    expect((await one(a.id)).transfer).toBeNull();
+  });
+
+  it('categoria de movimentação arquivada não impede salvar lançamentos', async () => {
+    const { who, inter, reserva, add, one } = await setup();
+    const tree = (await who({ method: 'GET', url: '/v1/categories' })).json() as {
+      id: string;
+      name: string;
+      children: { id: string; name: string }[];
+    }[];
+    const movement = tree.find((n) => n.name === 'Movimentação');
+    for (const child of movement?.children ?? []) {
+      await who({ method: 'DELETE', url: `/v1/categories/${child.id}` });
+    }
+    await add(inter, '-8000', 'PIX');
+    const second = await add(reserva, '8000', 'PIX');
+    expect(second.id).toBeDefined();
+    expect((await one(second.id)).transfer).toBeNull();
+  });
+
+  it('ligação manual: compra no cartão não é pagamento; mesma ponta é 409', async () => {
+    const { who, inter, card, add } = await setup();
+    const purchase = await add(card, '-9000', 'COMPRA LOJA');
+    const inflow = await add(inter, '9000', 'RECEBIDO');
+    const link = (a: string, b: string) =>
+      who({ method: 'POST', url: '/v1/transfers/link', payload: { a, b } });
+    expect((await link(purchase.id, inflow.id)).statusCode).toBe(409);
+    expect((await link(purchase.id, purchase.id)).statusCode).toBe(409);
   });
 
   it('sem pares, nada a sugerir; revisão conta as sugestões', async () => {

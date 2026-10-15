@@ -20,7 +20,7 @@ docker compose --profile demo up --build      # ou: podman compose --profile dem
 
 Abra http://localhost:3000 e entre com **demo@finlens.local** / **demo-finlens-123**.
 
-A conta demo tem seis meses de dados fictícios, com casos plantados para cada tela: uma cobrança duplicada, um valor fora do padrão, um orçamento estourado, lançamentos esperando revisão e uma regra sugerida. Ela é criada pela própria API, então classificação e aprendizado rodam de verdade.
+A conta demo tem seis meses de dados fictícios, com casos plantados para cada tela: uma cobrança duplicada, um valor fora do padrão, um orçamento estourado, lançamentos esperando revisão, uma regra sugerida, uma assinatura nova (Spotify) e um aumento de preço (Netflix). Ela é criada pela própria API, então classificação e aprendizado rodam de verdade.
 
 > Senhas e segredo do perfil `demo` são **apenas para uso local**. Não exponha esse perfil na internet.
 
@@ -48,7 +48,7 @@ O histórico de saídas revela o que se repete (assinaturas, aluguel, planos): c
 
 ### Insights
 
-Dez geradores puros olham o mês corrente:
+Dez geradores puros olham o mês corrente (os de recorrência olham o histórico de até 26 meses):
 
 - categoria acima do normal até o mesmo dia do mês;
 - pequenas compras que se somam;

@@ -9,6 +9,8 @@ export type RecurrenceExpense = {
   /** Valor absoluto da saída. */
   amountCents: bigint;
   accountId: string;
+  /** Descrição original, usada para buscar os lançamentos. */
+  description: string;
   groupKey: string | null;
   groupLabel: string;
 };
@@ -17,6 +19,8 @@ export type Recurrence = {
   key: string;
   label: string;
   accountId: string;
+  /** Descrição original da última cobrança (para a busca de lançamentos). */
+  sampleDescription: string;
   cadence: RecurrenceCadence;
   /** Mediana das últimas 3 ocorrências. */
   typicalCents: bigint;
@@ -70,13 +74,21 @@ function monthlyEquivalent(cadence: RecurrenceCadence, cents: bigint): bigint {
   }
 }
 
-function detectGroup(key: string, items: RecurrenceExpense[], today: string): Recurrence | null {
-  // Ocorrências no mesmo dia contam como uma (a primeira por id).
-  const byDate = new Map<string, RecurrenceExpense>();
-  for (const e of [...items].sort((a, b) => a.id.localeCompare(b.id))) {
-    if (!byDate.has(e.postedDate)) byDate.set(e.postedDate, e);
+function detectGroup(
+  key: string,
+  items: RecurrenceExpense[],
+  today: string,
+  latestByAccount?: Map<string, string>,
+): Recurrence | null {
+  // Ocorrências no mesmo dia, ou em dias seguidos, contam como uma (a de menor id no dia).
+  const sorted = [...items].sort(
+    (a, b) => a.postedDate.localeCompare(b.postedDate) || a.id.localeCompare(b.id),
+  );
+  const occ: RecurrenceExpense[] = [];
+  for (const e of sorted) {
+    const prev = occ.at(-1);
+    if (!prev || day(e.postedDate) - day(prev.postedDate) > 1) occ.push(e);
   }
-  const occ = [...byDate.values()].sort((a, b) => a.postedDate.localeCompare(b.postedDate));
   if (occ.length < MIN_OCCURRENCES) return null;
 
   const intervals = occ
@@ -89,11 +101,33 @@ function detectGroup(key: string, items: RecurrenceExpense[], today: string): Re
   if (regular / intervals.length < MIN_REGULAR_SHARE) return null;
 
   const values = occ.map((e) => e.amountCents);
-  const mid = median(values);
-  const similar = values.filter(
-    (v) => (v > mid ? v - mid : mid - v) * 100n <= mid * VALUE_TOLERANCE_PCT,
-  ).length;
-  if (similar / values.length < MIN_REGULAR_SHARE) return null;
+  // Valores parecidos no histórico todo ou, depois de um reajuste grande, na metade mais recente.
+  const similarShare = (list: bigint[]) => {
+    const m = median(list);
+    const close = list.filter((v) => (v > m ? v - m : m - v) * 100n <= m * VALUE_TOLERANCE_PCT);
+    return close.length / list.length;
+  };
+  // Patamar atual: valores finais a até 15% do último; o que veio antes também deve ser consistente.
+  const lastV = values.at(-1) as bigint;
+  let plateau = values.length;
+  while (
+    plateau > 0 &&
+    ((values[plateau - 1] as bigint) > lastV
+      ? (values[plateau - 1] as bigint) - lastV
+      : lastV - (values[plateau - 1] as bigint)) *
+      100n <=
+      lastV * VALUE_TOLERANCE_PCT
+  ) {
+    plateau--;
+  }
+  const trailing = values.length - plateau;
+  const before = values.slice(0, plateau);
+  const valuesOk =
+    similarShare(values) >= MIN_REGULAR_SHARE ||
+    (trailing >= MIN_OCCURRENCES &&
+      before.length >= 2 &&
+      similarShare(before) >= MIN_REGULAR_SHARE);
+  if (!valuesOk) return null;
 
   const last = occ.at(-1) as RecurrenceExpense;
   const first = occ[0] as RecurrenceExpense;
@@ -103,7 +137,11 @@ function detectGroup(key: string, items: RecurrenceExpense[], today: string): Re
   if (day(today) > day(last.postedDate) + 2 * interval) status = 'ended';
   else if (
     (shape.cadence === 'weekly' || shape.cadence === 'monthly') &&
-    day(today) > day(nextExpectedDate) + shape.tolerance
+    day(today) > day(nextExpectedDate) + shape.tolerance &&
+    // Sem dados novos na conta depois da data esperada, "não veio" pode ser só extrato atrasado.
+    (!latestByAccount ||
+      day(latestByAccount.get(last.accountId) ?? '1970-01-01') >
+        day(nextExpectedDate) + shape.tolerance)
   ) {
     status = 'late';
   }
@@ -134,6 +172,7 @@ function detectGroup(key: string, items: RecurrenceExpense[], today: string): Re
     key,
     label: last.groupLabel,
     accountId: last.accountId,
+    sampleDescription: last.description,
     cadence: shape.cadence,
     typicalCents,
     monthlyCents: monthlyEquivalent(shape.cadence, typicalCents),
@@ -149,15 +188,22 @@ function detectGroup(key: string, items: RecurrenceExpense[], today: string): Re
 }
 
 /** Cobranças que se repetem (assinaturas, aluguel, planos), a partir do histórico de saídas. */
-export function detectRecurrences(expenses: RecurrenceExpense[], today: string): Recurrence[] {
+export function detectRecurrences(
+  expenses: RecurrenceExpense[],
+  today: string,
+  /** Data do lançamento mais recente de cada conta; limita "atrasada" a contas com dados novos. */
+  latestByAccount?: Map<string, string>,
+): Recurrence[] {
   const groups = new Map<string, RecurrenceExpense[]>();
   for (const e of expenses) {
     if (!e.groupKey) continue;
-    groups.set(e.groupKey, [...(groups.get(e.groupKey) ?? []), e]);
+    const list = groups.get(e.groupKey);
+    if (list) list.push(e);
+    else groups.set(e.groupKey, [e]);
   }
   const result: Recurrence[] = [];
   for (const [key, items] of groups) {
-    const r = detectGroup(key, items, today);
+    const r = detectGroup(key, items, today, latestByAccount);
     if (r) result.push(r);
   }
   return result.sort(

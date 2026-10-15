@@ -5,6 +5,7 @@ export const RecurrenceItem = z.object({
   key: z.string(),
   label: z.string(),
   accountId: Uuid,
+  sampleDescription: z.string(),
   cadence: z.enum(['weekly', 'monthly', 'quarterly', 'annual']),
   typicalCents: TotalCents,
   monthlyCents: TotalCents,

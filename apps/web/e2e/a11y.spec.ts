@@ -132,10 +132,15 @@ for (const theme of ['light', 'dark'] as const) {
         new Date(Date.parse(`${today}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
       await signUp(page);
       await createCheckingAccount(page);
+      test.setTimeout(120_000);
       for (const k of [2, 1, 0]) {
         await addExpense(page, 'SPOTIFY AB', '21,90', undefined, ago(3 + 28 * k));
+        await addExpense(page, 'SMARTFIT', '99,90', undefined, ago(45 + 30 * k));
+        await addExpense(page, 'CLUBE DO LIVRO', '39,90', undefined, ago(100 + 30 * k));
       }
+      await addExpense(page, 'PADARIA', '15,00', undefined, ago(1));
       await page.goto('/painel/recorrencias');
+      await page.getByText(/^Encerradas/).click();
       await expect(page.getByRole('list', { name: 'Cobranças recorrentes' })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page)).toEqual([]);

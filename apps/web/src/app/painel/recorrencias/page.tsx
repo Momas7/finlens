@@ -24,13 +24,13 @@ function Row({ item }: { item: RecurrenceItem }) {
   return (
     <li className="space-y-1 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="flex flex-wrap items-baseline gap-2 font-semibold">
-          {item.label}
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h2 className="font-semibold">{item.label}</h2>
           {item.status === 'late' && (
             <span className={`${badge} bg-mark text-raised`}>atrasada</span>
           )}
           {item.isNew && <span className={`${badge} bg-tape text-on-tape`}>nova</span>}
-        </h3>
+        </div>
         <p className="text-[15px]">
           <span className="figure">{formatCents(item.typicalCents)}</span>
           <span className="text-ink-soft"> · {CADENCE[item.cadence]}</span>
@@ -51,7 +51,7 @@ function Row({ item }: { item: RecurrenceItem }) {
         )}
       </p>
       <Link
-        href={`/painel/transacoes?${new URLSearchParams({ q: item.label, from: item.firstDate })}`}
+        href={`/painel/transacoes?${new URLSearchParams({ q: item.sampleDescription, from: item.firstDate })}`}
         className="inline-block text-[13px] text-ink-soft underline underline-offset-2 hover:text-ink"
       >
         Ver lançamentos<span className="sr-only"> de {item.label}</span>
@@ -81,14 +81,16 @@ export default async function RecorrenciasPage() {
         </Panel>
       ) : (
         <>
-          <p className="text-[18px]">
-            <span className="font-semibold">
-              {data.totals.count}{' '}
-              {data.totals.count === 1 ? 'cobrança recorrente' : 'cobranças recorrentes'}
-            </span>
-            , <span className="figure text-[22px]">{formatCents(data.totals.monthlyCents)}</span>{' '}
-            por mês
-          </p>
+          {running.length > 0 && (
+            <p className="text-[18px]">
+              <span className="font-semibold">
+                {data.totals.count}{' '}
+                {data.totals.count === 1 ? 'cobrança recorrente' : 'cobranças recorrentes'}
+              </span>
+              , <span className="figure text-[22px]">{formatCents(data.totals.monthlyCents)}</span>{' '}
+              por mês
+            </p>
+          )}
           {running.length > 0 && (
             <Panel className="px-5">
               <ul aria-label="Cobranças recorrentes" className="divide-y divide-scale">

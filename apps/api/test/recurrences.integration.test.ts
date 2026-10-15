@@ -92,9 +92,36 @@ describe('/v1/recurrences', () => {
   it('cobrança que não veio vira atrasada e insight', async () => {
     const { inter, add, list, kinds } = await setup();
     for (let k = 5; k >= 0; k--) await add(inter, '-9990', 'SMARTFIT', ago(45 + 30 * k));
+    // A conta tem dados mais novos que a data esperada: o extrato não está só atrasado.
+    await add(inter, '-1500', 'PADARIA', ago(1));
     const { items } = await list();
     expect(items[0]).toMatchObject({ label: 'Smart Fit', status: 'late' });
     expect(await kinds()).toContain('recurrence_missing');
+  });
+
+  it('sem dados novos na conta, não acusa cobrança que não veio', async () => {
+    const { inter, add, list, kinds } = await setup();
+    for (let k = 5; k >= 0; k--) await add(inter, '-9990', 'SMARTFIT', ago(45 + 30 * k));
+    expect((await list()).items[0]).toMatchObject({ label: 'Smart Fit', status: 'active' });
+    expect(await kinds()).not.toContain('recurrence_missing');
+  });
+
+  it('parcelas de uma compra não são assinatura', async () => {
+    const { inter, add, list } = await setup();
+    for (let k = 0; k < 5; k++) {
+      await add(inter, '-19900', `COMPRA MAGALU PARC 0${5 - k}/10`, ago(3 + 30 * k));
+    }
+    expect((await list()).items).toEqual([]);
+  });
+
+  it('anual: três cobranças em três anos e a descrição original para a busca', async () => {
+    const { who, inter, add } = await setup();
+    for (const y of [2, 1, 0]) await add(inter, '-120000', 'SULAMERICA SEGURO', ago(20 + 365 * y));
+    const body = (await who({ method: 'GET', url: '/v1/recurrences' })).json();
+    expect(body.items[0]).toMatchObject({
+      cadence: 'annual',
+      sampleDescription: 'SULAMERICA SEGURO',
+    });
   });
 
   it('transferências ligadas ficam de fora', async () => {

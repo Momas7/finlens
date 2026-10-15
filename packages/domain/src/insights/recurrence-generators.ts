@@ -11,7 +11,7 @@ const YEARLY_FACTOR: Record<Recurrence['cadence'], bigint> = {
 
 const searchAction = (r: Recurrence) => ({
   label: 'Ver lançamentos',
-  href: `/painel/transacoes?${new URLSearchParams({ q: r.label, from: r.firstDate })}`,
+  href: `/painel/transacoes?${new URLSearchParams({ q: r.sampleDescription, from: r.firstDate })}`,
 });
 
 /** Assinatura ou conta que costuma cobrar e não apareceu na data esperada. */
@@ -23,7 +23,7 @@ export function recurrenceMissing(ctx: InsightContext): InsightCandidate[] {
       severity: 'warning' as const,
       dedupeKey: `recurrence_missing:${r.key}:${r.nextExpectedDate.slice(0, 7)}`,
       title: `${r.label} não apareceu`,
-      body: `${r.label} costuma cobrar ${formatBRL(r.typicalCents)} por volta do dia ${Number(r.nextExpectedDate.slice(8))}; não apareceu este mês.`,
+      body: `${r.label} costuma cobrar ${formatBRL(r.typicalCents)} por volta do dia ${Number(r.nextExpectedDate.slice(8))}; a última foi em ${r.lastDate.slice(8, 10)}/${r.lastDate.slice(5, 7)}.`,
       impactCents: r.typicalCents,
       action: searchAction(r),
     }));
@@ -40,7 +40,7 @@ export function priceIncrease(ctx: InsightContext): InsightCandidate[] {
         kind: 'price_increase' as const,
         severity: 'warning' as const,
         dedupeKey: `price_increase:${r.key}:${toCents}`,
-        title: `${r.label} ficou mais cara`,
+        title: `Preço subiu: ${r.label}`,
         body: `${r.label} subiu de ${formatBRL(fromCents)} para ${formatBRL(toCents)} (+${formatBRL(perYear)} por ano).`,
         impactCents: perYear,
         action: searchAction(r),
@@ -57,7 +57,7 @@ export function newSubscription(ctx: InsightContext): InsightCandidate[] {
       kind: 'new_subscription' as const,
       severity: 'info' as const,
       dedupeKey: `new_subscription:${r.key}`,
-      title: `Nova assinatura: ${r.label}`,
+      title: `Nova cobrança recorrente: ${r.label}`,
       body: `Nova assinatura: ${r.label}, ${formatBRL(r.monthlyCents)} por mês.`,
       impactCents: r.monthlyCents * 12n,
       action: searchAction(r),

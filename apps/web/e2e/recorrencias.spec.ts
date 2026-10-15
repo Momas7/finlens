@@ -53,9 +53,30 @@ test('aumento de preço vira insight dispensável na Início', async ({ page }) 
   await seed(page);
   await page.goto('/painel');
   const block = page.getByRole('region', { name: 'O que mudou' });
-  await expect(block).toContainText('Netflix ficou mais cara');
-  await block.getByRole('button', { name: 'Dispensar: Netflix ficou mais cara' }).click();
-  await expect(page.getByText('Netflix ficou mais cara')).toHaveCount(0);
+  await expect(block).toContainText('Preço subiu: Netflix');
+  await block.getByRole('button', { name: 'Dispensar: Preço subiu: Netflix' }).click();
+  await expect(page.getByText('Preço subiu: Netflix')).toHaveCount(0);
+});
+
+test('atrasada e encerradas', async ({ page }) => {
+  test.setTimeout(90_000);
+  await signUp(page);
+  await createCheckingAccount(page, 'Inter', '5.000,00');
+  for (const k of [2, 1, 0]) await charge(page, 'SMARTFIT', '99,90', ago(45 + 30 * k));
+  for (const k of [2, 1, 0]) await charge(page, 'CLUBE DO LIVRO', '39,90', ago(100 + 30 * k));
+  await charge(page, 'PADARIA', '15,00', ago(1));
+  await page.goto('/painel/recorrencias');
+  const list = page.getByRole('list', { name: 'Cobranças recorrentes' });
+  await expect(list.getByRole('listitem').filter({ hasText: 'Smart Fit' })).toContainText(
+    'atrasada',
+  );
+  await expect(list.getByRole('listitem').filter({ hasText: 'Smart Fit' })).toContainText(
+    'não apareceu',
+  );
+  await page.getByText('Encerradas (1)').click();
+  await expect(
+    page.getByRole('list', { name: 'Cobranças encerradas' }).getByRole('listitem'),
+  ).toContainText('Última cobrança em');
 });
 
 test('estado vazio', async ({ page }) => {

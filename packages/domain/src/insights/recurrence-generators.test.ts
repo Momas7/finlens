@@ -10,6 +10,7 @@ const rec = (over: Partial<Recurrence> = {}): Recurrence => ({
   cadence: 'monthly',
   typicalCents: 5590n,
   monthlyCents: 5590n,
+  sampleDescription: 'NETFLIX.COM',
   firstDate: '2026-05-03',
   lastDate: '2026-09-03',
   nextExpectedDate: '2026-10-03',
@@ -31,9 +32,9 @@ describe('recurrenceMissing', () => {
       impactCents: 5590n,
       dedupeKey: 'recurrence_missing:m:netflix:2026-10',
       title: 'Netflix não apareceu',
-      body: 'Netflix costuma cobrar R$ 55,90 por volta do dia 3; não apareceu este mês.',
+      body: 'Netflix costuma cobrar R$ 55,90 por volta do dia 3; a última foi em 03/09.',
     });
-    expect(i?.action?.href).toBe('/painel/transacoes?q=Netflix&from=2026-05-03');
+    expect(i?.action?.href).toBe('/painel/transacoes?q=NETFLIX.COM&from=2026-05-03');
   });
 });
 
@@ -46,6 +47,7 @@ describe('priceIncrease', () => {
       severity: 'warning',
       impactCents: 4800n,
       dedupeKey: 'price_increase:m:netflix:5990',
+      title: 'Preço subiu: Netflix',
       body: 'Netflix subiu de R$ 55,90 para R$ 59,90 (+R$ 48,00 por ano).',
     });
     const weekly = priceIncrease(
@@ -80,6 +82,7 @@ describe('newSubscription', () => {
       severity: 'info',
       impactCents: 26280n,
       dedupeKey: 'new_subscription:m:spotify',
+      title: 'Nova cobrança recorrente: Spotify',
       body: 'Nova assinatura: Spotify, R$ 21,90 por mês.',
     });
   });

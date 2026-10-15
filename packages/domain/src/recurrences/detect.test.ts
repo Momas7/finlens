@@ -12,6 +12,7 @@ const ex = (
   postedDate,
   amountCents: BigInt(amountCents),
   accountId: 'acc',
+  description: groupLabel.toUpperCase(),
   groupKey,
   groupLabel,
 });
@@ -99,7 +100,9 @@ describe('detectRecurrences', () => {
   it('estados: ativa, atrasada, encerrada; trimestral atrasada fica ativa', () => {
     const [active] = detectRecurrences(monthly(5590), '2026-11-04');
     expect(active?.status).toBe('active');
-    expect(detectRecurrences(monthly(5590), '2026-11-10')[0]?.status).toBe('late');
+    expect(
+      detectRecurrences(monthly(5590), '2026-11-10', new Map([['acc', '2026-11-09']]))[0]?.status,
+    ).toBe('late');
     expect(detectRecurrences(monthly(5590), '2026-12-15')[0]?.status).toBe('ended');
     const quarterly = ['2026-01-10', '2026-04-10', '2026-07-10'].map((d) =>
       ex(d, 90000, 'd:seguro'),
@@ -149,6 +152,51 @@ describe('detectRecurrences', () => {
     const items = monthly(5590);
     expect(detectRecurrences([...items].reverse(), TODAY)).toEqual(detectRecurrences(items, TODAY));
     expect(detectRecurrences([], TODAY)).toEqual([]);
+  });
+
+  it('anual: 3 cobranças em 3 anos', () => {
+    const yearly = ['2024-03-10', '2025-03-10', '2026-03-10'].map((d) =>
+      ex(d, 120000, 'd:ipva', 'IPVA'),
+    );
+    expect(detectRecurrences(yearly, TODAY)[0]).toMatchObject({
+      cadence: 'annual',
+      monthlyCents: 10000n,
+    });
+  });
+
+  it('aumento grande (> 15%) não derruba a recorrência quando o patamar novo é consistente', () => {
+    const values = [2190, 2190, 2190, 2190, 2190, 2190, 2190, 3490, 3490, 3490, 3490];
+    const dates = [
+      '2025-12-03',
+      '2026-01-03',
+      '2026-02-03',
+      '2026-03-03',
+      '2026-04-03',
+      '2026-05-03',
+      '2026-06-03',
+      '2026-07-03',
+      '2026-08-03',
+      '2026-09-03',
+      '2026-10-03',
+    ];
+    const items = dates.map((d, i) => ex(d, values[i] as number, 'm:spotify', 'Spotify'));
+    expect(detectRecurrences(items, TODAY)[0]).toMatchObject({
+      typicalCents: 3490n,
+      status: 'active',
+    });
+  });
+
+  it('cobrança no dia seguinte é a mesma ocorrência', () => {
+    const items = ['2026-07-10', '2026-08-10', '2026-09-10', '2026-09-11'].map((d) => ex(d, 5590));
+    expect(detectRecurrences(items, '2026-09-20')[0]?.occurrences).toBe(3);
+  });
+
+  it('atrasada só quando a conta tem dados mais novos que a data esperada', () => {
+    const stale = new Map([['acc', '2026-10-01']]);
+    expect(detectRecurrences(monthly(5590), '2026-11-10', stale)[0]?.status).toBe('active');
+    expect(
+      detectRecurrences(monthly(5590), '2026-11-10', new Map([['acc', '2026-11-09']]))[0]?.status,
+    ).toBe('late');
   });
 
   it('ordena por custo mensal', () => {

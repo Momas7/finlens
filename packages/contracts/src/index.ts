@@ -8,6 +8,7 @@ export * from './goals';
 export * from './insights';
 export * from './me';
 export * from './money';
+export * from './recurrences';
 export * from './review';
 export * from './rules';
 export * from './transactions';

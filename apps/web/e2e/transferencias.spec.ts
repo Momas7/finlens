@@ -63,7 +63,7 @@ test('sugestão na Revisão: é transferência e não é', async ({ page }) => {
   await page.goto('/painel/revisao');
   const region = page.getByRole('region', { name: 'Transferências a confirmar' });
   await expect(region).toContainText('Valores iguais e opostos');
-  await region.getByRole('button', { name: 'É transferência' }).click();
+  await region.getByRole('button', { name: /^É transferência/ }).click();
   await expect(page.getByRole('region', { name: 'Transferências a confirmar' })).toHaveCount(0);
   await page.goto('/painel/transacoes');
   await expect(page.getByRole('row', { name: /ENVIO/ })).toContainText('Transferência com Reserva');
@@ -74,7 +74,7 @@ test('"Não é" some e não volta; desfazer transferência', async ({ page }) =>
   await page.goto('/painel/revisao');
   await page
     .getByRole('region', { name: 'Transferências a confirmar' })
-    .getByRole('button', { name: 'Não é' })
+    .getByRole('button', { name: /^Não é/ })
     .click();
   await expect(page.getByRole('region', { name: 'Transferências a confirmar' })).toHaveCount(0);
   await page.reload();

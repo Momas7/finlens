@@ -13,6 +13,8 @@ export type InstallmentExpense = {
   groupLabel: string;
   /** Marca "PARC 03/10" já validada pelo `normalize` (1 ≤ atual ≤ total ≤ 24). */
   installment: { current: number; total: number };
+  /** A descrição diz "PARC"/"PARCELA"/"n DE N"; sem isso a marca pode ser só uma data (05/10). */
+  explicit: boolean;
 };
 
 export type InstallmentStatus = 'active' | 'done' | 'stale';
@@ -39,6 +41,7 @@ export type InstallmentPlan = {
 const SAME_VALUE_PCT = 15n;
 const STALE_AFTER_DAYS = 62;
 const MAX_MONTHS = 24;
+const DUPLICATE_WITHIN_DAYS = 5;
 
 const day = (date: string) => Math.round(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -84,7 +87,7 @@ function buildPlan(items: InstallmentExpense[], today: string): InstallmentPlan 
   else if (day(today) - day(last.postedDate) > STALE_AFTER_DAYS) status = 'stale';
 
   return {
-    key: `${last.groupKey}:${total}:${installmentCents}`,
+    key: `${last.groupKey}:${last.accountId}:${total}:${sorted[0]?.postedDate}`,
     label: last.groupLabel,
     accountId: last.accountId,
     sampleDescription: last.description,
@@ -115,6 +118,16 @@ export function detectInstallmentPlans(
     if (!e.groupKey) continue;
     const bucket = `${e.groupKey}|${e.accountId}|${e.installment.total}`;
     const list = clusters.get(bucket) ?? [];
+    // Linha repetida (lançamento em dobro ou extrato sobreposto): mesma parcela, valor e dias próximos.
+    const duplicate = list.some((c) =>
+      c.items.some(
+        (i) =>
+          i.installment.current === e.installment.current &&
+          closeTo(e.amountCents, i.amountCents) &&
+          Math.abs(day(e.postedDate) - day(i.postedDate)) <= DUPLICATE_WITHIN_DAYS,
+      ),
+    );
+    if (duplicate) continue;
     const home = list.find(
       (c) =>
         !c.items.some((i) => i.installment.current === e.installment.current) &&
@@ -124,7 +137,11 @@ export function detectInstallmentPlans(
     else list.push({ items: [e] });
     clusters.set(bucket, list);
   }
-  const plans = [...clusters.values()].flat().map((c) => buildPlan(c.items, today));
+  const plans = [...clusters.values()]
+    .flat()
+    // Marca que pode ser só uma data (sem "PARC") precisa de duas parcelas vistas.
+    .filter((c) => c.items.some((i) => i.explicit) || c.items.length >= 2)
+    .map((c) => buildPlan(c.items, today));
   return plans.sort(
     (a, b) =>
       Number(b.status === 'active') - Number(a.status === 'active') ||

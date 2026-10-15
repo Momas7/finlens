@@ -7,13 +7,32 @@ import {
   type InstallmentPlan,
   type Month,
 } from '@finlens/domain';
-import { loadExpenseBase } from '../recurrences/queries';
+import { type BaseExpense, loadExpenseBase } from '../recurrences/queries';
+
+const EXPLICIT_MARK = /\b(PARC|PARCELA|PARCELAS)\b|\d\s*DE\s*\d/;
 
 /** Parcelamentos detectados (as saídas com marca "PARC n/N"). */
-export async function loadInstallmentPlansRaw(tx: Tx, today: string): Promise<InstallmentPlan[]> {
-  const expenses = (await loadExpenseBase(tx, today)).flatMap((e) =>
-    e.installment ? [{ ...e, installment: e.installment }] : [],
-  );
+export async function loadInstallmentPlansRaw(
+  tx: Tx,
+  today: string,
+  base?: BaseExpense[],
+): Promise<InstallmentPlan[]> {
+  const all = base ?? (await loadExpenseBase(tx, today));
+  const expenses = all.flatMap((e) => {
+    if (!e.installment) return [];
+    const explicit = EXPLICIT_MARK.test(
+      e.description
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toUpperCase(),
+    );
+    // Um "05/10" no fim da descrição, no dia 5 de outubro, é a data da compra, não uma parcela.
+    const isPurchaseDate =
+      !explicit &&
+      e.installment.current === Number(e.postedDate.slice(8, 10)) &&
+      e.installment.total === Number(e.postedDate.slice(5, 7));
+    return isPurchaseDate ? [] : [{ ...e, installment: e.installment, explicit }];
+  });
   return detectInstallmentPlans(expenses, today);
 }
 

@@ -10,7 +10,8 @@ Mostrar os parcelamentos em andamento, o que ainda falta pagar e quanto isso pes
 
 `detectInstallmentPlans(expenses, today): InstallmentPlan[]`, função pura. Entrada: saídas dos últimos 26 meses, sem movimentação, com a marca `{ current, total }` extraída de `normalize` (só as que têm marca).
 
-- **Entra:** `1 ≤ atual ≤ total ≤ 24` (a marca inválida já vem nula do `normalize`).
+- **Entra:** `1 ≤ atual ≤ total ≤ 24` (a marca inválida já vem nula do `normalize`). Uma marca no fim da descrição sem "PARC"/"PARCELA"/"n DE N" pode ser só uma data (`05/10`): é descartada quando coincide com o dia e o mês do lançamento, e só vale com 2 ou mais parcelas vistas.
+- **Linha repetida:** a mesma parcela, de valor parecido, com até 5 dias de diferença é um lançamento em dobro e não abre plano novo.
 - **Plano:** grupo por chave (`groupKey`), conta e `total`. Dentro do grupo, as parcelas se separam em planos por valor: uma parcela entra no plano cujo valor mediano está a até 15% do dela e que ainda não tem aquela parcela; senão abre um plano novo.
 - **Valor da parcela:** mediana dos valores das parcelas vistas.
 - **Última vista:** a de maior número (data e número).
@@ -23,7 +24,7 @@ Mostrar os parcelamentos em andamento, o que ainda falta pagar e quanto isso pes
   - `active`: o resto.
 - **Ordem:** ativos primeiro, depois por valor da parcela decrescente e nome.
 
-`InstallmentPlan`: `{ key, label, accountId, sampleDescription, total, lastSeen, seenCount, installmentCents, remaining, lastSeenDate, nextDate, endDate, remainingCents, status, schedule: { date, cents }[] }`, com `key = grupo:total:valor`.
+`InstallmentPlan`: `{ key, label, accountId, sampleDescription, total, lastSeen, seenCount, installmentCents, remaining, lastSeenDate, nextDate, endDate, remainingCents, status, schedule: { date, cents }[] }`, com `key = grupo:conta:total:data da menor parcela vista`.
 
 `commitmentByMonth(plans, fromMonth, maxMonths = 24): { month, cents }[]` soma o cronograma dos planos `active` por mês de calendário, do mês `fromMonth` até o último mês com parcela (no máximo `maxMonths`); lista vazia sem planos ativos.
 

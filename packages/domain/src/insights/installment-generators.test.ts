@@ -4,7 +4,7 @@ import { highCommitment, installmentEnding } from './installment-generators';
 import { ctx } from './test-helpers';
 
 const plan = (over: Partial<InstallmentPlan> = {}): InstallmentPlan => ({
-  key: 'd:MAGALU:10:19900',
+  key: 'd:MAGALU:acc:10:2026-08-05',
   label: 'MAGALU',
   accountId: 'acc',
   sampleDescription: 'MAGALU PARC 08/10',
@@ -72,7 +72,7 @@ describe('installmentEnding', () => {
       kind: 'installment_ending',
       severity: 'info',
       impactCents: 19900n,
-      dedupeKey: 'installment_ending:d:MAGALU:10:19900:2026-11',
+      dedupeKey: 'installment_ending:d:MAGALU:acc:10:2026-08-05:2026-11',
       title: 'Parcelamento termina: MAGALU',
       body: 'Em novembro termina a parcela de R$ 199,00 de MAGALU.',
     });

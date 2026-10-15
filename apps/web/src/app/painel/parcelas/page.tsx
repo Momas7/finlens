@@ -6,6 +6,14 @@ import { formatCents } from '@/lib/money';
 import { monthLabel } from '@/lib/month-label';
 import { MonthChart } from './month-chart';
 
+/** Texto do estabelecimento sem a marca de parcela, para achar todas as parcelas na lista. */
+function searchTerm(plan: InstallmentPlanItem): string {
+  const stripped = plan.sampleDescription
+    .replace(/\s*(PARC\w*\s*)?\d{1,2}\s*(\/|DE)\s*\d{1,2}.*$/i, '')
+    .trim();
+  return stripped || plan.label;
+}
+
 function Row({ plan }: { plan: InstallmentPlanItem }) {
   const done = plan.status === 'done';
   const stale = plan.status === 'stale';
@@ -29,7 +37,7 @@ function Row({ plan }: { plan: InstallmentPlanItem }) {
             : `Faltam ${plan.remaining}, ${formatCents(plan.remainingCents)} no total · última em ${monthLabel(plan.endDate.slice(0, 7))}.`}
       </p>
       <Link
-        href={`/painel/transacoes?${new URLSearchParams({ q: plan.sampleDescription.split(' PARC')[0] ?? plan.label })}`}
+        href={`/painel/transacoes?${new URLSearchParams({ q: searchTerm(plan) })}`}
         className="inline-block text-[13px] text-ink-soft underline underline-offset-2 hover:text-ink"
       >
         Ver lançamentos<span className="sr-only"> de {plan.label}</span>

@@ -25,7 +25,8 @@ export function highCommitment(ctx: InsightContext): InsightCandidate[] {
   if (incomes.length < MIN_INCOME_MONTHS) return [];
   const income = median(incomes);
   if (commitment.cents * 100n <= income * COMMITMENT_SHARE_PCT) return [];
-  const percent = Number((commitment.cents * 100n) / income);
+  // Arredonda para o mais próximo: 30,9% aparece como 31%, coerente com "acima de 30%".
+  const percent = Number((commitment.cents * 100n * 2n + income) / (income * 2n));
   const name = monthName(next);
   return [
     {

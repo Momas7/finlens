@@ -66,12 +66,21 @@ async function latestByAccount(tx: Tx): Promise<Map<string, string>> {
   return new Map(rows.flatMap((r) => (r.last ? [[r.accountId, r.last] as const] : [])));
 }
 
-export async function loadRecurrencesRaw(tx: Tx, today: string): Promise<Recurrence[]> {
-  const [expenses, latest] = await Promise.all([
-    loadRecurrenceExpenses(tx, today),
+/** `base` evita repetir a consulta de 26 meses quando o chamador já a fez. */
+export async function loadRecurrencesRaw(
+  tx: Tx,
+  today: string,
+  base?: BaseExpense[],
+): Promise<Recurrence[]> {
+  const [all, latest] = await Promise.all([
+    base ?? loadExpenseBase(tx, today),
     latestByAccount(tx),
   ]);
-  return detectRecurrences(expenses, today, latest);
+  return detectRecurrences(
+    all.filter((e) => e.installment === null),
+    today,
+    latest,
+  );
 }
 
 /** Lista para a API: valores em string e totais só das ativas e atrasadas. */

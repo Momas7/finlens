@@ -18,6 +18,7 @@ const ex = (
   groupKey,
   groupLabel: 'MAGALU',
   installment: { current, total },
+  explicit: true,
 });
 const TODAY = '2026-10-15';
 
@@ -98,10 +99,40 @@ describe('detectInstallmentPlans', () => {
       TODAY,
     );
     expect(plans).toHaveLength(4);
-    // a mesma parcela repetida do mesmo valor abre outro plano
+    // a mesma parcela do mesmo valor, em outra época (compra diferente), abre outro plano
     expect(
-      detectInstallmentPlans([ex('2026-10-05', 2, 10), ex('2026-10-09', 2, 10)], TODAY),
+      detectInstallmentPlans([ex('2026-09-05', 2, 10), ex('2026-10-12', 2, 10)], TODAY),
     ).toHaveLength(2);
+  });
+
+  it('data no fim da descrição não é parcela: sem "PARC", exige 2 vistas', () => {
+    const dated = (date: string, current: number): InstallmentExpense => ({
+      ...ex(date, current, 10, 5000, 'd:UBER'),
+      description: `UBER TRIP ${String(current).padStart(2, '0')}/10`,
+      explicit: false,
+    });
+    expect(detectInstallmentPlans([dated('2026-10-05', 5)], TODAY)).toEqual([]);
+    expect(
+      detectInstallmentPlans([dated('2026-09-05', 4), dated('2026-10-05', 5)], TODAY),
+    ).toHaveLength(1);
+  });
+
+  it('linha repetida (lançamento em dobro) não abre plano fantasma', () => {
+    const plans = detectInstallmentPlans(
+      [ex('2026-09-05', 3, 10), ex('2026-09-06', 3, 10), ex('2026-10-05', 4, 10)],
+      TODAY,
+    );
+    expect(plans).toHaveLength(1);
+    expect(plans[0]).toMatchObject({ lastSeen: 4, seenCount: 2 });
+  });
+
+  it('chave única: inclui conta, total e a data da primeira parcela vista', () => {
+    const plans = detectInstallmentPlans(
+      [ex('2026-10-05', 2, 10, 19900, 'd:M', 'a'), ex('2026-10-05', 2, 10, 19900, 'd:M', 'b')],
+      TODAY,
+    );
+    expect(new Set(plans.map((p) => p.key)).size).toBe(2);
+    expect(plans[0]?.key).toContain(':10:2026-10-05');
   });
 
   it('rejeita grupo sem chave', () => {

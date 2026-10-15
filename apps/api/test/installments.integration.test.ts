@@ -102,6 +102,39 @@ describe('/v1/installments', () => {
     });
   });
 
+  it('data no fim da descrição não vira parcelamento', async () => {
+    const { add, list } = await setup();
+    const [y, m] = today.split('-');
+    await add('-4500', `POSTO SHELL ${today.slice(8)}/${m}`, today);
+    expect(y).toBeDefined();
+    expect((await list()).plans).toEqual([]);
+  });
+
+  it('lançamento em dobro não cria parcelamento fantasma', async () => {
+    const { add, list } = await setup();
+    await add('-19900', 'LOJA MAGALU PARC 03/10', ago(33));
+    await add('-19900', 'LOJA MAGALU PARC 03/10', ago(32));
+    await add('-19900', 'LOJA MAGALU PARC 04/10', ago(3));
+    expect((await list()).plans).toHaveLength(1);
+  });
+
+  it('parcelas pesadas no mês seguinte viram insight de compromisso alto', async () => {
+    const { add, kinds } = await setup();
+    const prev = (n: number) => {
+      const d = new Date(Date.parse(`${today.slice(0, 7)}-15T12:00:00Z`));
+      d.setUTCMonth(d.getUTCMonth() - n);
+      return d.toISOString().slice(0, 10);
+    };
+    for (const n of [1, 2, 3]) await add('100000', 'SALARIO ACME', prev(n));
+    for (const [k, n] of [
+      [63, 1],
+      [33, 2],
+      [3, 3],
+    ] as const)
+      await add('-35000', `LOJA MAGALU PARC 0${n}/10`, ago(k));
+    expect(await kinds()).toContain('high_commitment');
+  });
+
   it('recorrências continuam ignorando parcelas', async () => {
     const { who, add } = await setup();
     for (const k of [2, 1, 0])

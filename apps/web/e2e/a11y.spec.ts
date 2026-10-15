@@ -146,6 +146,29 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('/painel/parcelas', async ({ page }) => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      const ago = (n: number) =>
+        new Date(Date.parse(`${today}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+      test.setTimeout(120_000);
+      await signUp(page);
+      await createCheckingAccount(page);
+      for (const [k, n] of [
+        [33, '02'],
+        [3, '03'],
+      ] as const) {
+        await addExpense(page, `MAGALU PARC ${n}/10`, '199,00', undefined, ago(k));
+      }
+      await addExpense(page, 'ESTANTE LOJA PARC 05/05', '80,00', undefined, ago(20));
+      await page.goto('/painel/parcelas');
+      await page.getByText(/^Encerradas/).click();
+      await expect(page.getByRole('list', { name: 'Parcelamentos ativos' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

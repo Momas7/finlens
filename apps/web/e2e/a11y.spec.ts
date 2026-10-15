@@ -124,6 +124,23 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page)).toEqual([]);
     });
 
+    test('/painel/recorrencias', async ({ page }) => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+        new Date(),
+      );
+      const ago = (n: number) =>
+        new Date(Date.parse(`${today}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+      await signUp(page);
+      await createCheckingAccount(page);
+      for (const k of [2, 1, 0]) {
+        await addExpense(page, 'SPOTIFY AB', '21,90', undefined, ago(3 + 28 * k));
+      }
+      await page.goto('/painel/recorrencias');
+      await expect(page.getByRole('list', { name: 'Cobranças recorrentes' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+
     test('/painel/orcamentos', async ({ page }) => {
       await signUp(page);
       await createCheckingAccount(page);

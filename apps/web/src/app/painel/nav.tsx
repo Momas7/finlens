@@ -8,6 +8,7 @@ const ITEMS = [
   { href: '/painel/transacoes', label: 'Transações' },
   { href: '/painel/orcamentos', label: 'Orçamentos' },
   { href: '/painel/metas', label: 'Metas' },
+  { href: '/painel/recorrencias', label: 'Recorrências' },
   { href: '/painel/insights', label: 'Insights' },
   { href: '/painel/revisao', label: 'Revisão' },
   { href: '/painel/contas', label: 'Contas' },

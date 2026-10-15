@@ -10,6 +10,7 @@ export function ctx(overrides: Partial<InsightContext> = {}): InsightContext {
     activeMonths: [],
     budgets: [],
     recurrences: [],
+    installments: [],
     ...overrides,
   };
 }

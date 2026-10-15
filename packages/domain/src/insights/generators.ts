@@ -1,5 +1,6 @@
 import { lastMonths, type Month, monthRange, previousMonth } from '../analytics/month';
 import { formatBRL } from '../money/money';
+import { highCommitment, installmentEnding } from './installment-generators';
 import { newSubscription, priceIncrease, recurrenceMissing } from './recurrence-generators';
 import { median, robustZ } from './stats';
 import type { InsightCandidate, InsightContext, InsightExpense } from './types';
@@ -271,5 +272,7 @@ export function generateInsights(ctx: InsightContext): InsightCandidate[] {
     ...recurrenceMissing(ctx),
     ...priceIncrease(ctx),
     ...newSubscription(ctx),
+    ...highCommitment(ctx),
+    ...installmentEnding(ctx),
   ];
 }

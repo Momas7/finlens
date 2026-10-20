@@ -41,6 +41,9 @@ describe('seed da demo', () => {
     const suggestions: { pattern: string }[] = await get('/v1/rule-suggestions');
     expect(suggestions.map((s) => s.pattern)).toContain('PADARIA SAO JOAO');
 
+    const installments: { plans: { label: string; status: string }[] } =
+      await get('/v1/installments');
+    expect(installments.plans.map((p) => p.label).sort()).toEqual(['Dell', 'Magalu']);
     // As transferências para a Reserva foram ligadas sozinhas, nos dois lados.
     const list: { items: { description: string; transfer: { withAccount: string } | null }[] } =
       await get('/v1/transactions?q=PIX%20TRANSF');

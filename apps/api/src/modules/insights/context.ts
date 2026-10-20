@@ -11,7 +11,8 @@ import {
 import { and, eq, lt } from 'drizzle-orm';
 import { activeMonths, inPeriod, notMovement, rootTotals } from '../analytics/aggregate';
 import { loadBudgetMonth } from '../budgets/queries';
-import { loadRecurrencesRaw } from '../recurrences/queries';
+import { loadInstallmentPlansRaw } from '../installments/queries';
+import { loadExpenseBase, loadRecurrencesRaw } from '../recurrences/queries';
 
 const HISTORY_MONTHS = 7;
 const TOTALS_MONTHS = 5;
@@ -23,7 +24,9 @@ export async function loadInsightContext(tx: Tx, today: string): Promise<Insight
   const window = lastMonths(month, HISTORY_MONTHS);
   const closed = lastMonths(previousMonth(month), 6);
 
-  const [rows, names, totals, active, budgetMonth, recurrences] = await Promise.all([
+  // Uma consulta de 26 meses serve às recorrências e às parcelas.
+  const base = await loadExpenseBase(tx, today);
+  const [rows, names, totals, active, budgetMonth, recurrences, installments] = await Promise.all([
     tx
       .select({
         id: transactions.id,
@@ -50,7 +53,8 @@ export async function loadInsightContext(tx: Tx, today: string): Promise<Insight
     rootTotals(tx, lastMonths(month, TOTALS_MONTHS)[0] as Month, month),
     activeMonths(tx, closed[0] as Month, closed.at(-1) as Month),
     loadBudgetMonth(tx, month, today),
-    loadRecurrencesRaw(tx, today),
+    loadRecurrencesRaw(tx, today, base),
+    loadInstallmentPlansRaw(tx, today, base),
   ]);
 
   const label = new Map(names.map((c) => [c.id, c.name]));
@@ -95,6 +99,7 @@ export async function loadInsightContext(tx: Tx, today: string): Promise<Insight
       expenseCents: v.expense,
     })),
     recurrences,
+    installments,
     activeMonths: closed.filter((m) => active.has(m)),
     budgets: budgetMonth.items
       .filter((i) => i.limitCents !== null && i.state !== null)

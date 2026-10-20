@@ -16,6 +16,8 @@ export const Insight = z.object({
     'recurrence_missing',
     'price_increase',
     'new_subscription',
+    'high_commitment',
+    'installment_ending',
   ]),
   severity: z.enum(['info', 'warning']),
   title: z.string(),

@@ -196,6 +196,9 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByRole('region', { name: 'Regras sugeridas' })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page), 'com grupos').toEqual([]);
+      await page.getByRole('button', { name: 'Sugerir com IA' }).click();
+      await expect(page.getByText('A IA local não encontrou uma categoria.')).toBeVisible();
+      expect(await seriousViolations(page), 'com sugestão da IA').toEqual([]);
 
       // Tela de semelhantes depois de corrigir uma padaria automática.
       await addExpense(page, 'PADARIA SAO JOAO', '11,00');

@@ -1,5 +1,6 @@
 import {
   CategoryTree,
+  LlmStatus,
   Review,
   type ReviewGroup,
   RuleSuggestionList,
@@ -27,11 +28,13 @@ function GroupItem({
   group,
   labels,
   groups,
+  aiEnabled,
 }: {
   section: string;
   group: ReviewGroup;
   labels: Map<string, string>;
   groups: { group: string; options: CategoryOption[] }[];
+  aiEnabled: boolean;
 }) {
   const percent = group.confidence === null ? null : Math.round(group.confidence * 100);
   const suggested = group.suggestedCategoryId && labels.get(group.suggestedCategoryId);
@@ -65,7 +68,7 @@ function GroupItem({
           />
         </div>
       )}
-      <GroupForm group={group} groups={groups} />
+      <GroupForm group={group} groups={groups} aiEnabled={aiEnabled} />
       <Link
         href={`/painel/transacoes?q=${encodeURIComponent(group.label)}`}
         className="inline-block text-[13px] text-ink-soft underline underline-offset-2 hover:text-ink"
@@ -83,6 +86,7 @@ function GroupSection({
   list,
   labels,
   groups,
+  aiEnabled,
 }: {
   id: string;
   title: string;
@@ -90,6 +94,7 @@ function GroupSection({
   list: ReviewGroup[];
   labels: Map<string, string>;
   groups: { group: string; options: CategoryOption[] }[];
+  aiEnabled: boolean;
 }) {
   if (list.length === 0) return null;
   return (
@@ -100,7 +105,14 @@ function GroupSection({
       <p className="mt-1 text-[13px] text-ink-soft">{hint}</p>
       <ul className="divide-y divide-scale">
         {list.map((g) => (
-          <GroupItem key={g.key} section={id} group={g} labels={labels} groups={groups} />
+          <GroupItem
+            key={g.key}
+            section={id}
+            group={g}
+            labels={labels}
+            groups={groups}
+            aiEnabled={aiEnabled}
+          />
         ))}
       </ul>
     </Panel>
@@ -108,11 +120,12 @@ function GroupSection({
 }
 
 export default async function RevisaoPage() {
-  const [review, suggestions, transfers, tree] = await Promise.all([
+  const [review, suggestions, transfers, tree, llm] = await Promise.all([
     apiFetch('/v1/review', Review),
     apiFetch('/v1/rule-suggestions', RuleSuggestionList),
     apiFetch('/v1/transfers/suggestions', TransferSuggestionList),
     apiFetch('/v1/categories', CategoryTree),
+    apiFetch('/v1/llm/status', LlmStatus),
   ]);
   const labels = categoryLabels(tree);
   const groups = categoryOptions(tree);
@@ -171,6 +184,7 @@ export default async function RevisaoPage() {
             list={review.needsYou}
             labels={labels}
             groups={groups}
+            aiEnabled={llm.enabled}
           />
           <GroupSection
             id="likely"
@@ -179,6 +193,7 @@ export default async function RevisaoPage() {
             list={review.likely}
             labels={labels}
             groups={groups}
+            aiEnabled={false}
           />
         </>
       )}

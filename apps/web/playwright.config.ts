@@ -15,9 +15,21 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
+      command: 'node e2e/fake-llm.mjs',
+      url: 'http://127.0.0.1:4040/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 15_000,
+    },
+    {
       command: 'pnpm --filter @finlens/api dev',
       // Todo o tráfego do e2e chega pelo mesmo IP (o Next); os limites padrão barrariam a suíte.
-      env: { ...definedEnv(), AUTH_RATE_LIMIT_PER_MINUTE: '1000', RATE_LIMIT_PER_MINUTE: '20000' },
+      env: {
+        ...definedEnv(),
+        AUTH_RATE_LIMIT_PER_MINUTE: '1000',
+        RATE_LIMIT_PER_MINUTE: '20000',
+        LLM_BASE_URL: 'http://127.0.0.1:4040/v1',
+        LLM_MODEL: 'fake',
+      },
       url: 'http://localhost:3333/health',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

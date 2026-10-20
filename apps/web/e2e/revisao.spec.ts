@@ -104,3 +104,25 @@ test('agora não mantém tudo', async ({ page }) => {
   await expect(page.getByRole('row', { name: /299,00/ })).toContainText('automática');
   await expect(page.getByRole('row', { name: /299,00/ })).toContainText('Outras compras');
 });
+
+test('Sugerir com IA preenche o seletor e a pessoa confirma', async ({ page }) => {
+  await signUp(page);
+  await createCheckingAccount(page);
+  await addExpense(page, 'LOJA COM IA', '25,00');
+  await addExpense(page, 'LOJA SEM PALPITE', '12,00');
+  await page.goto('/painel/revisao');
+
+  const withAi = page.getByRole('listitem').filter({ hasText: 'LOJA COM IA' });
+  await withAi.getByRole('button', { name: 'Sugerir com IA' }).click();
+  await expect(withAi.getByText('Sugestão da IA local (confiança 70%)')).toBeVisible();
+  await expect(withAi.getByLabel('Categoria para LOJA COM IA')).toHaveValue(/.+/);
+  await expect(withAi.getByLabel('Categoria para LOJA COM IA')).toContainText('Outras compras');
+
+  const without = page.getByRole('listitem').filter({ hasText: 'LOJA SEM PALPITE' });
+  await without.getByRole('button', { name: 'Sugerir com IA' }).click();
+  await expect(without.getByText('A IA local não encontrou uma categoria.')).toBeVisible();
+
+  await withAi.getByRole('button', { name: /Confirmar/ }).click();
+  await expect(page.getByRole('heading', { name: 'LOJA SEM PALPITE' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'LOJA COM IA' })).toHaveCount(0);
+});

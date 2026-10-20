@@ -1,20 +1,25 @@
 'use client';
 
 import type { ReviewGroup } from '@finlens/contracts';
-import { type FormEvent, startTransition, useActionState } from 'react';
+import { type FormEvent, startTransition, useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import type { CategoryOption } from '@/lib/categories';
-import { confirmGroup, type ReviewState } from './actions';
+import { type AiSuggestion, confirmGroup, type ReviewState, suggestWithAi } from './actions';
 
 /** Seletor de categoria pré-preenchido com a sugestão e botão "Confirmar N". */
 export function GroupForm({
   group,
   groups,
+  aiEnabled = false,
 }: {
   group: ReviewGroup;
   groups: { group: string; options: CategoryOption[] }[];
+  /** IA local ligada: mostra "Sugerir com IA" nos grupos sem sugestão. */
+  aiEnabled?: boolean;
 }) {
+  const [ai, setAi] = useState<AiSuggestion | null>(null);
+  const [asking, setAsking] = useState(false);
   const [state, action, pending] = useActionState<ReviewState, FormData>(confirmGroup, {});
   const kind = group.sign === 'out' ? 'expense' : 'income';
   const visible = groups
@@ -29,6 +34,16 @@ export function GroupForm({
     startTransition(() => action(data));
   };
   const count = group.transactionIds.length;
+  const askAi = () => {
+    setAsking(true);
+    startTransition(async () => {
+      const first = group.transactionIds[0];
+      setAi(first ? await suggestWithAi(first) : { categoryId: null });
+      setAsking(false);
+    });
+  };
+  const aiCategory = ai?.categoryId ?? null;
+  const showAiButton = aiEnabled && !group.suggestedCategoryId;
   return (
     <form
       action={action}
@@ -40,7 +55,8 @@ export function GroupForm({
       <Select
         label={`Categoria para ${group.label}`}
         name="categoryId"
-        defaultValue={group.suggestedCategoryId ?? ''}
+        key={aiCategory ?? 'none'}
+        defaultValue={aiCategory ?? group.suggestedCategoryId ?? ''}
         error={state.error}
       >
         <option value="">Escolha…</option>
@@ -57,6 +73,20 @@ export function GroupForm({
       <Button type="submit" disabled={pending} className={state.error ? 'sm:mb-[1.625rem]' : ''}>
         Confirmar {count}
       </Button>
+      {showAiButton && (
+        <div className="space-y-1 sm:col-span-2">
+          <Button type="button" variant="ghost" onClick={askAi} disabled={asking}>
+            {asking ? 'Consultando a IA…' : 'Sugerir com IA'}
+          </Button>
+          <p role="status" className="text-[13px] text-ink-soft">
+            {ai && 'confidence' in ai
+              ? `Sugestão da IA local (confiança ${Math.round(ai.confidence * 100)}%). Revise antes de confirmar.`
+              : ai
+                ? 'A IA local não encontrou uma categoria.'
+                : ''}
+          </p>
+        </div>
+      )}
     </form>
   );
 }

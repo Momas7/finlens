@@ -17,6 +17,11 @@ const EnvSchema = z.object({
   // Cookie `Secure`: segue NODE_ENV=production. A demo local (http://localhost) desliga, porque
   // nem todo navegador aceita cookie seguro sem HTTPS.
   SECURE_COOKIES: z.enum(['true', 'false']).optional(),
+  // LLM opcional (servidor compatível com /chat/completions da OpenAI, ex.: Ollama). Sem URL, desligado.
+  LLM_BASE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
+  LLM_MODEL: z.string().default(''),
+  LLM_API_KEY: z.string().default(''),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 });
 
 export type Config = {
@@ -33,6 +38,8 @@ export type Config = {
   /** Requisições por minuto por IP em todas as rotas. */
   rateLimitPerMinute: number;
   trustedProxies: string[];
+  /** `null` quando o LLM está desligado. */
+  llm: { baseUrl: string; model: string; apiKey: string; timeoutMs: number } | null;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -56,5 +63,13 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     trustedProxies: e.TRUSTED_PROXIES.split(',')
       .map((p) => p.trim())
       .filter(Boolean),
+    llm: e.LLM_BASE_URL
+      ? {
+          baseUrl: e.LLM_BASE_URL.replace(/\/+$/, ''),
+          model: e.LLM_MODEL,
+          apiKey: e.LLM_API_KEY,
+          timeoutMs: e.LLM_TIMEOUT_MS,
+        }
+      : null,
   };
 }

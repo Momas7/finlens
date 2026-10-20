@@ -7,6 +7,7 @@ export * from './errors';
 export * from './goals';
 export * from './insights';
 export * from './installments';
+export * from './llm';
 export * from './me';
 export * from './money';
 export * from './recurrences';

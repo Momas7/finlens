@@ -50,6 +50,19 @@ O histórico de saídas revela o que se repete (assinaturas, aluguel, planos): c
 
 Compras parceladas (`PARC 03/10` no texto) viram planos: parcela atual, quantas faltam, quanto sobra a pagar e o compromisso de cada mês. Dois avisos entram nos insights: quando as parcelas do mês seguinte passam de 30% da renda e quando um parcelamento está terminando.
 
+### IA local opcional
+
+Desligada por padrão. Com um servidor compatível com `/chat/completions` da OpenAI (Ollama, llama.cpp, LM Studio), a Revisão ganha o botão "Sugerir com IA" nos grupos que nenhuma camada do classificador reconheceu. Ela só roda quando você clica, preenche o seletor com a categoria sugerida (confiança limitada a 80%) e não grava nada até você confirmar.
+
+```bash
+# .env
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_MODEL=qwen2.5:3b
+LLM_API_KEY=            # opcional
+```
+
+> **Privacidade:** saem apenas a descrição normalizada (sem números longos, cidade, datas nem a contraparte de PIX), o sentido (saída ou entrada) e os nomes das categorias. Valor, data, conta e ids nunca saem. Com um servidor remoto, esse texto sai da sua máquina; prefira um modelo local.
+
 ### Insights
 
 Doze geradores puros olham o mês corrente (os de recorrência olham o histórico de até 26 meses):
@@ -173,7 +186,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F3b | Recorrências e assinaturas (cobrança que não veio, aumento de preço) | ✅ |
 | F3c | Parcelas e compromisso futuro | ✅ |
 | F6b | Exportar e excluir os próprios dados | ✅ |
-| — | LLM opcional como último recurso da classificação | planejada |
+| F7 | IA local opcional como último recurso da classificação (só no botão) | ✅ |
 
 ## Segurança
 

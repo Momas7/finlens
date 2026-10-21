@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 export const MeResponse = z.object({
-  user: z.object({ id: z.string(), name: z.string(), email: z.string() }),
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+    twoFactorEnabled: z.boolean().default(false),
+  }),
   workspace: z.object({ id: z.uuid(), name: z.string() }),
 });
 export type MeResponse = z.infer<typeof MeResponse>;

@@ -4,7 +4,7 @@ import fp from 'fastify-plugin';
 import type { Auth } from '../auth';
 
 export type Tenant = { userId: string; workspaceId: string };
-export type SessionUser = { id: string; name: string; email: string };
+export type SessionUser = { id: string; name: string; email: string; twoFactorEnabled: boolean };
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -45,6 +45,7 @@ export const tenantPlugin = fp(async (app: FastifyInstance, opts: { auth: Auth; 
       id: session.user.id,
       name: session.user.name,
       email: session.user.email,
+      twoFactorEnabled: session.user.twoFactorEnabled === true,
     };
     request.tenant = { userId: session.user.id, workspaceId: workspace.id };
   });

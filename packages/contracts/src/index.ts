@@ -1,4 +1,5 @@
 export * from './accounts';
+export * from './activity';
 export * from './analytics';
 export * from './budgets';
 export * from './categories';

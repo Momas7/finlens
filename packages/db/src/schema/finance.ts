@@ -16,6 +16,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { user } from './auth';
 import { workspaces } from './workspaces';
 
 const workspaceId = () =>
@@ -370,4 +371,21 @@ export const importBatches = pgTable(
     check('import_batches_status_check', sql`${t.status} in ('preview', 'committed')`),
     check('import_batches_format_check', sql`${t.format} in ('ofx', 'csv')`),
   ],
+);
+
+/** Registro de atividade da conta (login, 2FA, exportação, importação). Por usuário, não por workspace. */
+export const auditLogs = pgTable(
+  'audit_logs',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    event: text().notNull(),
+    ip: text(),
+    userAgent: text(),
+    meta: jsonb().$type<Record<string, string | number>>(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('audit_logs_user_created_idx').on(t.userId, t.createdAt.desc())],
 );

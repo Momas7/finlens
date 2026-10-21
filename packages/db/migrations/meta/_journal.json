@@ -148,6 +148,20 @@
       "when": 1792548589127,
       "tag": "0020_easy_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792550766361,
+      "tag": "0021_huge_kronos",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792550767326,
+      "tag": "0022_audit_logs_rls",
+      "breakpoints": true
     }
   ]
 }

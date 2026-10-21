@@ -16,6 +16,7 @@ export const user = pgTable('user', {
   email: text().notNull().unique(),
   emailVerified: boolean().notNull().default(false),
   image: text(),
+  twoFactorEnabled: boolean().notNull().default(false),
   ...timestamps,
 });
 
@@ -66,4 +67,19 @@ export const verification = pgTable(
     ...timestamps,
   },
   (t) => [index().on(t.identifier)],
+);
+
+/** Segredo TOTP e códigos de reserva do plugin `twoFactor`. Acessada só pelo Better Auth. */
+export const twoFactor = pgTable(
+  'two_factor',
+  {
+    id: text().primaryKey(),
+    secret: text().notNull(),
+    backupCodes: text().notNull(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    verified: boolean().notNull().default(true),
+  },
+  (t) => [index().on(t.userId), index().on(t.secret)],
 );

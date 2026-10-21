@@ -2,7 +2,13 @@ import { sql } from 'drizzle-orm';
 import type { Db } from './client';
 
 /** Tabelas sem tenant (Better Auth): as únicas de `public` que podem ficar sem RLS. */
-export const TABLES_WITHOUT_TENANT = ['user', 'session', 'account', 'verification'] as const;
+export const TABLES_WITHOUT_TENANT = [
+  'user',
+  'session',
+  'account',
+  'verification',
+  'two_factor',
+] as const;
 
 /** Tabelas de `public` que não têm RLS ENABLE + FORCE, fora as listadas acima. */
 export async function tablesWithoutForcedRls(db: Db): Promise<string[]> {

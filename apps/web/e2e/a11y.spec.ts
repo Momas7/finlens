@@ -183,6 +183,34 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await seriousViolations(page), 'com orçamento').toEqual([]);
     });
 
+    test('/painel/importar', async ({ page }) => {
+      test.setTimeout(120_000);
+      await signUp(page);
+      await page.goto('/painel/importar');
+      expect(await seriousViolations(page), 'sem conta').toEqual([]);
+      await page.goto('/painel/contas/nova');
+      await page.getByLabel('Nome').fill('Cartão Inter');
+      await page.getByLabel('Tipo').selectOption('credit_card');
+      await page.getByLabel('Fechamento').fill('5');
+      await page.getByLabel('Vencimento').fill('12');
+      await page.getByRole('button', { name: 'Salvar conta' }).click();
+      await expect(page).toHaveURL(/\/painel\/contas$/);
+      await page.goto('/painel/importar');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page), 'formulário').toEqual([]);
+      await page.getByLabel('Arquivo do extrato').setInputFiles({
+        name: 'banco.csv',
+        mimeType: 'text/csv',
+        buffer: Buffer.from('dia;historico;valor\n05/10/2026;PADARIA XYZ;45,90\n'),
+      });
+      await page.getByRole('button', { name: 'Ler arquivo' }).click();
+      await expect(page.getByText('Não reconheci este formato')).toBeVisible();
+      expect(await seriousViolations(page), 'mapeamento').toEqual([]);
+      await page.getByRole('button', { name: 'Ver prévia' }).click();
+      await expect(page.getByRole('status')).toContainText('novos');
+      expect(await seriousViolations(page), 'prévia').toEqual([]);
+    });
+
     test('/painel/revisao', async ({ page }) => {
       await signUp(page);
       await page.goto('/painel/revisao');

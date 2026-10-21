@@ -119,7 +119,9 @@ function GroupSection({
   );
 }
 
-export default async function RevisaoPage() {
+export default async function RevisaoPage({ searchParams }: PageProps<'/painel/revisao'>) {
+  const { importados } = await searchParams;
+  const imported = typeof importados === 'string' ? Number(importados) : 0;
   const [review, suggestions, transfers, tree, llm] = await Promise.all([
     apiFetch('/v1/review', Review),
     apiFetch('/v1/rule-suggestions', RuleSuggestionList),
@@ -139,6 +141,15 @@ export default async function RevisaoPage() {
           Lançamentos parecidos aparecem juntos. Confirmar ensina o Finlens a acertar os próximos.
         </p>
       </div>
+
+      {Number.isInteger(imported) && imported > 0 && (
+        <p
+          role="status"
+          className="rounded-[6px] border border-scale bg-raised px-4 py-3 text-[13px]"
+        >
+          {imported} {imported === 1 ? 'lançamento importado' : 'lançamentos importados'}.
+        </p>
+      )}
 
       {transfers.length > 0 && (
         <Panel as="section" aria-labelledby="transfer-suggestions" className="px-5 pt-5 pb-2">

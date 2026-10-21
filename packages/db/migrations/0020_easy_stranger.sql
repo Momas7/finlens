@@ -1,0 +1,2 @@
+DROP INDEX "import_batches_committed_sha_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX "import_batches_committed_sha_idx" ON "import_batches" USING btree ("workspace_id","account_id","file_sha256") WHERE "import_batches"."status" = 'committed';

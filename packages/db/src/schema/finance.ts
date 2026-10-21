@@ -6,6 +6,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   pgTable,
   smallint,
@@ -100,7 +101,9 @@ export const transactions = pgTable(
     amountCents: bigint({ mode: 'bigint' }).notNull(),
     description: text().notNull(),
     notes: text(),
-    source: text({ enum: ['manual'] }).notNull(),
+    source: text({ enum: ['manual', 'import'] }).notNull(),
+    /** Chave de deduplicação das linhas importadas; nula em lançamento manual. */
+    importKey: text(),
     descriptionNormalized: text().notNull().default(''),
     merchantKey: text(),
     classificationStatus: text({ enum: ['auto', 'likely', 'suggested', 'confirmed', 'none'] })
@@ -154,7 +157,10 @@ export const transactions = pgTable(
     ),
     index('transactions_workspace_merchant_idx').on(t.workspaceId, t.merchantKey),
     check('transactions_amount_check', sql`${t.amountCents} <> 0`),
-    check('transactions_source_check', sql`${t.source} in ('manual')`),
+    check('transactions_source_check', sql`${t.source} in ('manual', 'import')`),
+    uniqueIndex('transactions_workspace_import_key_idx')
+      .on(t.workspaceId, t.importKey)
+      .where(sql`${t.importKey} is not null`),
     index('transactions_workspace_date_idx').on(t.workspaceId, t.postedDate.desc(), t.id.desc()),
     index('transactions_workspace_account_date_idx').on(t.workspaceId, t.accountId, t.postedDate),
   ],
@@ -325,4 +331,43 @@ export const transferDismissals = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique('transfer_dismissals_workspace_pair_key').on(t.workspaceId, t.pairKey)],
+);
+
+export type ImportBatchRow = {
+  postedDate: string;
+  description: string;
+  amountCents: string;
+  externalId: string | null;
+  key: string;
+};
+
+/** Arquivo lido e à espera de confirmação (ou já importado). O arquivo bruto não é guardado. */
+export const importBatches = pgTable(
+  'import_batches',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: workspaceId(),
+    accountId: uuid().notNull(),
+    fileSha256: text().notNull(),
+    filename: text().notNull(),
+    format: text({ enum: ['ofx', 'csv'] }).notNull(),
+    status: text({ enum: ['preview', 'committed'] }).notNull(),
+    rows: jsonb().$type<ImportBatchRow[]>().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    committedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    unique('import_batches_workspace_id_id_key').on(t.workspaceId, t.id),
+    foreignKey({
+      name: 'import_batches_account_fk',
+      columns: [t.workspaceId, t.accountId],
+      foreignColumns: [financialAccounts.workspaceId, financialAccounts.id],
+    }),
+    // O mesmo arquivo não é importado duas vezes na mesma conta.
+    uniqueIndex('import_batches_committed_sha_idx')
+      .on(t.workspaceId, t.accountId, t.fileSha256)
+      .where(sql`${t.status} = 'committed'`),
+    check('import_batches_status_check', sql`${t.status} in ('preview', 'committed')`),
+    check('import_batches_format_check', sql`${t.format} in ('ofx', 'csv')`),
+  ],
 );

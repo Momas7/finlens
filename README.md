@@ -38,6 +38,10 @@ Cada lançamento é classificado ao ser salvo, com a confiança e o motivo. O qu
 
 <img src="docs/media/revisao-dark.png" alt="Revisão com regra sugerida e grupo esperando categoria, tema escuro" width="100%">
 
+### Importação de extratos
+
+Envie o arquivo do banco e veja a prévia antes de gravar: quantos lançamentos são novos, quantos já foram importados e quais já existem porque você lançou à mão. A fatura do cartão Inter (CSV) é reconhecida direto, o OFX é lido pelo padrão, e um CSV de outro banco pede só que você aponte as colunas de data, descrição e valor. Reimportar um período que se sobrepõe ao anterior traz apenas o que é novo. O que entra passa pela classificação normal e cai na Revisão.
+
 ### Transferências
 
 Quando duas pontas têm valores iguais e opostos em contas diferentes (uma transferência para a poupança, o pagamento da fatura do cartão), o Finlens liga as duas e as tira de gastos e receitas. Liga sozinho só o óbvio (PIX, TED, fatura ou o nome da outra conta no texto, até 1 dia, sem ambiguidade); o resto vira sugestão na Revisão.
@@ -181,7 +185,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F4 | Painel do mês e orçamentos | ✅ |
 | F5 | Insights e metas | ✅ |
 | F6a | Demo de um comando e esta vitrine | ✅ |
-| F1b | Importação de extratos OFX/CSV (Inter, Mercado Pago) | próxima (aguardando extratos reais para validar os parsers) |
+| F1b | Importação de extratos: fatura Inter (CSV), OFX e CSV com mapeamento de colunas | ✅ (presets do Mercado Pago e do extrato Inter dependem de amostras) |
 | F3a | Transferências e pagamento de fatura (ligação automática e sugestões) | ✅ |
 | F3b | Recorrências e assinaturas (cobrança que não veio, aumento de preço) | ✅ |
 | F3c | Parcelas e compromisso futuro | ✅ |

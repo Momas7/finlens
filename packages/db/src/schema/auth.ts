@@ -1,6 +1,6 @@
 // Tabelas exigidas pelo Better Auth (schema core: user, session, account, verification).
 // Não são tabelas de tenant: não têm RLS e são acessadas apenas pelo Better Auth.
-import { boolean, index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 const timestamps = {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -80,6 +80,8 @@ export const twoFactor = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     verified: boolean().notNull().default(true),
+    failedVerificationCount: integer().notNull().default(0),
+    lockedUntil: timestamp({ withTimezone: true }),
   },
   (t) => [index().on(t.userId), index().on(t.secret)],
 );

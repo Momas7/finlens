@@ -3,6 +3,7 @@ import { type Db, ensurePersonalWorkspace } from '@finlens/db';
 import { hash, verify } from '@node-rs/argon2';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { twoFactor } from 'better-auth/plugins';
 import type { FastifyBaseLogger } from 'fastify';
 import { betterAuthLogger } from './better-auth-logger';
 import type { Config } from './config';
@@ -22,6 +23,7 @@ export function createAuth(db: Db, config: Config, log: FastifyBaseLogger) {
         session: schema.session,
         account: schema.account,
         verification: schema.verification,
+        twoFactor: schema.twoFactor,
       },
     }),
     emailAndPassword: {
@@ -32,6 +34,7 @@ export function createAuth(db: Db, config: Config, log: FastifyBaseLogger) {
         verify: ({ hash: stored, password }) => verify(stored, password),
       },
     },
+    plugins: [twoFactor({ issuer: 'Finlens' })],
     // Rate limit é feito pelo Fastify, que conhece o IP real da requisição.
     rateLimit: { enabled: false },
     telemetry: { enabled: false },

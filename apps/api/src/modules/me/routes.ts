@@ -1,9 +1,10 @@
-import type { MeResponse } from '@finlens/contracts';
-import { type Db, withTenant, workspaces } from '@finlens/db';
+import type { ActivityList, MeResponse } from '@finlens/contracts';
+import { auditLogs, type Db, withTenant, workspaces } from '@finlens/db';
 import { todayInSaoPaulo } from '@finlens/domain';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '../../config';
+import { recordAudit } from '../audit/record';
 import { deleteAccount } from './delete';
 import { exportCsv, exportData } from './export';
 
@@ -20,6 +21,23 @@ export async function meRoutes(app: FastifyInstance, opts: { db: Db; config: Con
     return { user: request.sessionUser, workspace };
   });
 
+  app.get(
+    '/v1/me/activity',
+    { preHandler: app.requireAuth },
+    async (request): Promise<ActivityList> => {
+      const rows = await withTenant(opts.db, request.tenant, (tx) =>
+        tx.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(20),
+      );
+      return rows.map((r) => ({
+        id: r.id,
+        event: r.event as ActivityList[number]['event'],
+        ip: r.ip,
+        createdAt: r.createdAt.toISOString(),
+        meta: r.meta,
+      }));
+    },
+  );
+
   app.get('/v1/me/export', { preHandler: app.requireAuth }, async (request, reply) => {
     const data = await withTenant(opts.db, request.tenant, async (tx) => {
       const [workspace] = await tx
@@ -28,6 +46,13 @@ export async function meRoutes(app: FastifyInstance, opts: { db: Db; config: Con
         .where(eq(workspaces.id, request.tenant.workspaceId));
       return exportData(tx, request.sessionUser, workspace?.name ?? '');
     });
+    await recordAudit(opts.db, request.log, {
+      userId: request.tenant.userId,
+      event: 'data_exported',
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+      meta: { format: 'json' },
+    });
     return reply
       .header('content-disposition', `attachment; filename="finlens-${todayInSaoPaulo()}.json"`)
       .send(data);
@@ -35,6 +60,13 @@ export async function meRoutes(app: FastifyInstance, opts: { db: Db; config: Con
 
   app.get('/v1/me/export.csv', { preHandler: app.requireAuth }, async (request, reply) => {
     const csv = await withTenant(opts.db, request.tenant, (tx) => exportCsv(tx));
+    await recordAudit(opts.db, request.log, {
+      userId: request.tenant.userId,
+      event: 'data_exported',
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+      meta: { format: 'csv' },
+    });
     return reply
       .header('content-type', 'text/csv; charset=utf-8')
       .header(

@@ -65,7 +65,7 @@ export async function buildApp(deps: {
   const auth = createAuth(db, config, app.log);
   await app.register(tenantPlugin, { auth, db });
   await app.register(healthRoutes, { db });
-  await app.register(authRoutes, { auth, config });
+  await app.register(authRoutes, { auth, config, db });
   await app.register(meRoutes, { db, config });
   await app.register(accountRoutes, { db });
   await app.register(categoryRoutes, { db });

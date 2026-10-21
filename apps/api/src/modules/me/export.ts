@@ -1,4 +1,5 @@
 import {
+  auditLogs,
   budgets,
   categories,
   classificationFeedback,
@@ -48,6 +49,7 @@ export async function exportData(
     goalRows,
     insightRows,
     transferDismissalRows,
+    auditRows,
   ] = await Promise.all([
     tx.select().from(financialAccounts).orderBy(asc(financialAccounts.createdAt)),
     tx.select().from(categories),
@@ -59,6 +61,7 @@ export async function exportData(
     tx.select().from(goals),
     tx.select().from(insightStates),
     tx.select().from(transferDismissals),
+    tx.select().from(auditLogs).orderBy(asc(auditLogs.createdAt)),
   ]);
   return {
     format: 'finlens-export/1',
@@ -75,6 +78,7 @@ export async function exportData(
     goals: all(goalRows),
     insightStates: all(insightRows),
     transferDismissals: all(transferDismissalRows),
+    auditLogs: all(auditRows.map(({ userId: _userId, ...rest }) => rest)),
   };
 }
 

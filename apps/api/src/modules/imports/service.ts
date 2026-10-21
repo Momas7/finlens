@@ -15,7 +15,7 @@ import {
   withTenant,
 } from '@finlens/db';
 import { normalize, parseImport, statementMonth } from '@finlens/domain';
-import { and, asc, eq, gte, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { ApiError, notFound } from '../../http/errors';
 import { findAccount } from '../accounts/repository';
 import { activeCategories } from '../classification/evidence';

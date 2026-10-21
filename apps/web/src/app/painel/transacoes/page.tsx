@@ -85,7 +85,12 @@ export default async function TransacoesPage({ searchParams }: PageProps<'/paine
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[24px] font-semibold tracking-tight">Transações</h1>
-        <ButtonLink href="/painel/transacoes/nova">Novo lançamento</ButtonLink>
+        <div className="flex gap-2">
+          <ButtonLink variant="secondary" href="/painel/importar">
+            Importar
+          </ButtonLink>
+          <ButtonLink href="/painel/transacoes/nova">Novo lançamento</ButtonLink>
+        </div>
       </div>
 
       {droppedFilter && (

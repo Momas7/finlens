@@ -13,6 +13,7 @@ import { categoryRoutes } from './modules/categories/routes';
 import { classificationRoutes } from './modules/classification/routes';
 import { goalRoutes } from './modules/goals/routes';
 import { healthRoutes } from './modules/health/routes';
+import { importRoutes } from './modules/imports/routes';
 import { insightRoutes } from './modules/insights/routes';
 import { installmentRoutes } from './modules/installments/routes';
 import { llmRoutes } from './modules/llm/routes';
@@ -79,6 +80,7 @@ export async function buildApp(deps: {
   await app.register(recurrenceRoutes, { db });
   await app.register(installmentRoutes, { db });
   await app.register(goalRoutes, { db });
+  await app.register(importRoutes, { db });
   await app.register(llmRoutes, { db, config });
   await app.register(ruleSuggestionRoutes, { db });
 

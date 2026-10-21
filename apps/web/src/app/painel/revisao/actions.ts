@@ -92,3 +92,23 @@ export async function dismissTransfer(id: string): Promise<ReviewState> {
   revalidatePath('/painel', 'layout');
   return {};
 }
+
+export type AiSuggestion = { categoryId: string; confidence: number } | { categoryId: null };
+
+/** Pede à IA local uma categoria para o grupo. Nada é gravado; falha vira "sem sugestão". */
+export async function suggestWithAi(transactionId: string): Promise<AiSuggestion> {
+  const id = parseId(transactionId);
+  if (!id) return { categoryId: null };
+  let result: Awaited<ReturnType<typeof apiSend>>;
+  try {
+    result = await apiSend('POST', '/v1/llm/suggest', { transactionId: id });
+  } catch (err) {
+    if (err instanceof UnauthorizedError) redirect('/auth/clear-session');
+    return { categoryId: null };
+  }
+  if (!result.ok) return { categoryId: null };
+  const data = result.data as { categoryId: string | null; confidence?: number };
+  return data.categoryId === null
+    ? { categoryId: null }
+    : { categoryId: data.categoryId, confidence: data.confidence ?? 0 };
+}

@@ -58,6 +58,7 @@ describe('LLM opcional', () => {
       LLM_BASE_URL: baseUrl,
       LLM_MODEL: 'fake',
       LLM_TIMEOUT_MS: '400',
+      LLM_RATE_LIMIT_PER_MINUTE: '1000',
       AUTH_RATE_LIMIT_PER_MINUTE: '100',
     });
     off = await createTestApp();
@@ -191,6 +192,51 @@ describe('LLM opcional', () => {
     reply = () => answer(market, 0.6);
     await suggest(bia, other);
     expect(received.length).toBe(n + 2);
+  });
+
+  it('contraparte de PIX, TED e documentos não saem: sem chamada', async () => {
+    reply = () => answer(null);
+    const before = received.length;
+    for (const description of [
+      'PIX ENVIADO JOAO DA SILVA',
+      'TED 123.456.789-00 MARIA SOUZA',
+      'DOC JOSE LIMA',
+    ]) {
+      const id = await tx(ana, account, description, '-5000');
+      expect((await suggest(ana, id)).json()).toEqual({ categoryId: null });
+    }
+    expect(received.length).toBe(before);
+    // Número curto e documento num estabelecimento comum não vão no prompt.
+    const shop = await tx(ana, account, 'LOJA CENTRAL 12 CNPJ 12-34', '-5000');
+    reply = () => answer(null);
+    await suggest(ana, shop);
+    const sent = JSON.parse(received.at(-1) ?? '{}').messages.at(-1).content as string;
+    expect(sent).toContain('LOJA CENTRAL CNPJ');
+    expect(sent).not.toMatch(/12/);
+  });
+
+  it('cache respeita mudanças nas categorias', async () => {
+    const id = await tx(ana, account, 'CACHE CATEGORIAS UNICO', '-1000');
+    reply = () => answer('Categoria Nova Inventada');
+    expect((await suggest(ana, id)).json()).toEqual({ categoryId: null });
+    const tree = (await ana({ method: 'GET', url: '/v1/categories' })).json() as Cat[];
+    const parent = tree.find((c) => c.kind === 'expense');
+    const created = await ana({
+      method: 'POST',
+      url: '/v1/categories',
+      payload: { name: 'Categoria Nova Inventada', kind: 'expense', parentId: parent?.id },
+    });
+    expect(created.statusCode).toBe(201);
+    const newLabel = `${parent?.name} › Categoria Nova Inventada`;
+    reply = () => answer(newLabel, 0.6);
+    const after = (await suggest(ana, id)).json() as { label?: string };
+    expect(after.label).toBe(newLabel); // o `none` antigo não vale mais
+    // Categoria arquivada: o id em cache não volta.
+    const newId = (created.json() as { id: string }).id;
+    await ana({ method: 'DELETE', url: `/v1/categories/${newId}` });
+    reply = () => answer(newLabel, 0.6);
+    const archived = (await suggest(ana, id)).json() as { categoryId: string | null };
+    expect(archived.categoryId).not.toBe(newId);
   });
 
   it('lançamento de outro workspace ou inexistente: 404', async () => {

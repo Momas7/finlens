@@ -21,6 +21,7 @@ const EnvSchema = z.object({
   LLM_BASE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
   LLM_MODEL: z.string().default(''),
   LLM_API_KEY: z.string().default(''),
+  LLM_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(20),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 });
 
@@ -39,7 +40,13 @@ export type Config = {
   rateLimitPerMinute: number;
   trustedProxies: string[];
   /** `null` quando o LLM está desligado. */
-  llm: { baseUrl: string; model: string; apiKey: string; timeoutMs: number } | null;
+  llm: {
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+    timeoutMs: number;
+    ratePerMinute: number;
+  } | null;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -69,6 +76,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
           model: e.LLM_MODEL,
           apiKey: e.LLM_API_KEY,
           timeoutMs: e.LLM_TIMEOUT_MS,
+          ratePerMinute: e.LLM_RATE_LIMIT_PER_MINUTE,
         }
       : null,
   };

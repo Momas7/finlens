@@ -35,14 +35,22 @@ export function GroupForm({
   };
   const count = group.transactionIds.length;
   const askAi = () => {
+    if (asking) return;
     setAsking(true);
     startTransition(async () => {
-      const first = group.transactionIds[0];
-      setAi(first ? await suggestWithAi(first) : { categoryId: null });
-      setAsking(false);
+      try {
+        const first = group.transactionIds[0];
+        setAi(first ? await suggestWithAi(first) : { categoryId: null });
+      } catch {
+        setAi({ categoryId: null });
+      } finally {
+        setAsking(false);
+      }
     });
   };
-  const aiCategory = ai?.categoryId ?? null;
+  const offered = ai?.categoryId ?? null;
+  // Categoria que sumiu da lista (arquivada ou de outro tipo) não vale como sugestão.
+  const aiCategory = visible.some((g) => g.options.some((o) => o.id === offered)) ? offered : null;
   const showAiButton = aiEnabled && !group.suggestedCategoryId;
   return (
     <form
@@ -75,11 +83,11 @@ export function GroupForm({
       </Button>
       {showAiButton && (
         <div className="space-y-1 sm:col-span-2">
-          <Button type="button" variant="ghost" onClick={askAi} disabled={asking}>
+          <Button type="button" variant="ghost" onClick={askAi} aria-disabled={asking}>
             {asking ? 'Consultando a IA…' : 'Sugerir com IA'}
           </Button>
           <p role="status" className="text-[13px] text-ink-soft">
-            {ai && 'confidence' in ai
+            {ai && aiCategory && 'confidence' in ai
               ? `Sugestão da IA local (confiança ${Math.round(ai.confidence * 100)}%). Revise antes de confirmar.`
               : ai
                 ? 'A IA local não encontrou uma categoria.'

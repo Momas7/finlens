@@ -99,7 +99,13 @@ export type AiSuggestion = { categoryId: string; confidence: number } | { catego
 export async function suggestWithAi(transactionId: string): Promise<AiSuggestion> {
   const id = parseId(transactionId);
   if (!id) return { categoryId: null };
-  const result = await guard(() => apiSend('POST', '/v1/llm/suggest', { transactionId: id }));
+  let result: Awaited<ReturnType<typeof apiSend>>;
+  try {
+    result = await apiSend('POST', '/v1/llm/suggest', { transactionId: id });
+  } catch (err) {
+    if (err instanceof UnauthorizedError) redirect('/auth/clear-session');
+    return { categoryId: null };
+  }
   if (!result.ok) return { categoryId: null };
   const data = result.data as { categoryId: string | null; confidence?: number };
   return data.categoryId === null

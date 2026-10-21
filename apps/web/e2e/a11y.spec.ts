@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { addExpense, addIncome, createCheckingAccount, signUp } from './helpers';
+import { addExpense, addIncome, createCheckingAccount, PASSWORD, signUp } from './helpers';
+import { totp } from './totp';
 
 async function seriousViolations(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
@@ -181,6 +182,34 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByRole('meter', { name: 'Orçamento de Alimentação' })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       expect(await seriousViolations(page), 'com orçamento').toEqual([]);
+    });
+
+    test('/painel/conta com 2FA e o segundo passo do login', async ({ page }) => {
+      test.setTimeout(150_000);
+      const email = await signUp(page);
+      await page.goto('/painel/conta');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await seriousViolations(page), 'conta sem 2FA').toEqual([]);
+      await page.getByRole('button', { name: 'Ativar 2FA' }).click();
+      await page
+        .getByRole('region', { name: /Segurança/ })
+        .getByLabel('Senha atual')
+        .fill(PASSWORD);
+      await page.getByRole('button', { name: 'Continuar' }).click();
+      await expect(page.getByAltText('QR code para o aplicativo autenticador')).toBeVisible();
+      expect(await seriousViolations(page), 'configurando o 2FA').toEqual([]);
+      const secret = (await page.locator('code').first().innerText()).trim();
+      await page.getByLabel('Código do aplicativo').fill(totp(secret));
+      await page.getByRole('button', { name: 'Confirmar e ativar' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'Ativado' })).toBeVisible();
+      expect(await seriousViolations(page), 'conta com 2FA').toEqual([]);
+      await page.getByRole('button', { name: 'Sair' }).click();
+      await page.goto('/login');
+      await page.getByLabel('E-mail').fill(email);
+      await page.getByLabel('Senha').fill(PASSWORD);
+      await page.getByRole('button', { name: 'Entrar' }).click();
+      await expect(page.getByRole('heading', { name: 'Confirme que é você' })).toBeVisible();
+      expect(await seriousViolations(page), 'segundo passo').toEqual([]);
     });
 
     test('/painel/importar', async ({ page }) => {

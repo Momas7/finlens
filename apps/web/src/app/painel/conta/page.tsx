@@ -1,10 +1,14 @@
+import { ActivityList } from '@finlens/contracts';
 import { buttonClasses } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
+import { apiFetch } from '@/lib/api';
 import { getMe } from '@/lib/me';
+import { Activity } from './activity';
 import { DeleteAccountForm } from './delete-form';
+import { SecuritySection } from './security';
 
 export default async function ContaPage() {
-  const me = await getMe();
+  const [me, activity] = await Promise.all([getMe(), apiFetch('/v1/me/activity', ActivityList)]);
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -13,6 +17,30 @@ export default async function ContaPage() {
           {me.user.name}, {me.user.email}
         </p>
       </div>
+
+      <Panel as="section" aria-labelledby="security-title" className="space-y-4 p-5">
+        <div>
+          <h2 id="security-title" className="font-semibold">
+            Segurança: verificação em duas etapas (2FA)
+          </h2>
+          <p className="mt-1 text-[15px] text-ink-soft">
+            Além da senha, o login pede um código de 6 dígitos de um aplicativo autenticador.
+          </p>
+        </div>
+        <SecuritySection enabled={me.user.twoFactorEnabled} />
+      </Panel>
+
+      <Panel as="section" aria-labelledby="activity-title" className="space-y-4 p-5">
+        <div>
+          <h2 id="activity-title" className="font-semibold">
+            Atividade recente
+          </h2>
+          <p className="mt-1 text-[15px] text-ink-soft">
+            Os últimos 20 eventos da sua conta, com o IP de onde vieram.
+          </p>
+        </div>
+        <Activity items={activity} />
+      </Panel>
 
       <Panel as="section" aria-labelledby="export-title" className="space-y-4 p-5">
         <div>

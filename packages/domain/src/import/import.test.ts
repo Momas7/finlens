@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseBrMoney, parseCsv, parseDecimalMoney, parseImport } from './index';
 
+const HEADER = '"Data","Lançamento","Categoria","Tipo","Valor"\n';
 const INTER = `﻿"Data","Lançamento","Categoria","Tipo","Valor"
 "20/10/2026","MIX MATEUS","COMPRAS","Parcela 1/2","R$ 64,38"
 "18/10/2026","MARIPOSA VILAS         LAURO DE FREI BRA","RESTAURANTES","Compra à vista","R$ 42,76"
@@ -78,6 +79,16 @@ describe('fatura do cartão Inter', () => {
         externalId: null,
       },
     ]);
+  });
+});
+
+describe('pagamento da fatura do Inter', () => {
+  it('vira entrada mesmo quando o banco exporta o valor positivo', () => {
+    const csv = `${HEADER}"09/10/2026","PAGAMENTO ON LINE","OUTROS","Compra à vista","R$ 1.267,64"\n"08/10/2026","LOJA X","COMPRAS","Compra à vista","R$ 5,00"\n`;
+    const result = parseImport(csv);
+    expect(result.kind).toBe('rows');
+    if (result.kind !== 'rows') return;
+    expect(result.rows.map((r) => r.amountCents)).toEqual([126764n, -500n]);
   });
 });
 

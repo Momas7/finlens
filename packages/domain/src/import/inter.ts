@@ -25,10 +25,12 @@ export function parseInterCard(rows: string[][]): ParsedRows {
     const suffix = parcel
       ? ` PARC ${parcel[1]?.padStart(2, '0')}/${parcel[2]?.padStart(2, '0')}`
       : '';
+    // Pagamento da fatura é entrada; algumas exportações trazem o valor positivo.
+    const payment = /^PAGAMENTO\b/i.test(description.trim());
     out.push({
       postedDate,
       description: cleanDescription(description + suffix),
-      amountCents: -cents,
+      amountCents: payment ? (cents < 0n ? -cents : cents) : -cents,
       externalId: null,
     });
   }

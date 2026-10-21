@@ -46,7 +46,7 @@ Toda fonte de dados implementa `TransactionSource` e produz `RawTransaction`. CS
 ## 4. Pipeline de importação
 
 1. Upload (limite 5 MB, validação de conteúdo) cria `import_batch` com `sha256` do arquivo; arquivo repetido é rejeitado.
-2. Job `import.parse` no worker detecta formato (OFX ou CSV com perfil por instituição; CSV desconhecido pede mapeamento de colunas).
+2. A API lê o arquivo na hora, sem worker (extratos têm centenas de linhas), e detecta o formato (OFX ou CSV com perfil por instituição; CSV desconhecido pede mapeamento de colunas).
 3. Normalização da descrição.
 4. Deduplicação: `external_id` (FITID do OFX) ou `fingerprint = sha256(account|date|amount|desc_norm|ordinal)`, com `UNIQUE(workspace_id, fingerprint)`.
 5. Enriquecimento: parcelas, transferências, pagamento de fatura, estornos.

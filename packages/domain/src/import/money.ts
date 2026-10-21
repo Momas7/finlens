@@ -1,3 +1,5 @@
+const MAX_CENTS = 999_999_999_999_999n;
+
 /** "R$ 1.267,64", "-R$ 217,50", "1267,64" → centavos. null se não for dinheiro. */
 export function parseBrMoney(text: string): bigint | null {
   return parseDecimalMoney(text, 'comma');
@@ -21,5 +23,7 @@ export function parseDecimalMoney(text: string, decimal: 'comma' | 'dot'): bigin
   if (fracPart !== '' && !/^\d{1,2}$/.test(fracPart)) return null;
   const whole = BigInt(intPart.split(thousands).join(''));
   const cents = whole * 100n + BigInt(fracPart.padEnd(2, '0') || '0');
+  // Mesmo teto da digitação manual (15 dígitos): acima disso o bigint do banco estoura.
+  if (cents > MAX_CENTS) return null;
   return negative ? -cents : cents;
 }

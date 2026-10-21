@@ -223,6 +223,93 @@ describe('importação de extratos', () => {
     expect(n).toHaveLength(1);
   });
 
+  it('parcelas seguintes da mesma compra entram e vão para a fatura do mês certo', async () => {
+    const p1 = (
+      await preview(
+        ana,
+        card,
+        HEADER + line('10/08/2026', 'LOJA PARCELADA', 'Parcela 1/3', 'R$ 50,00'),
+      )
+    ).json();
+    await commit(ana, p1.batchId);
+    // Meses depois, a fatura traz a parcela 2/3 com a data original da compra.
+    const p2 = (
+      await preview(
+        ana,
+        card,
+        HEADER + line('10/08/2026', 'LOJA PARCELADA', 'Parcela 2/3', 'R$ 50,00'),
+      )
+    ).json();
+    expect(p2.summary).toMatchObject({ new: 1, imported: 0 });
+    await commit(ana, p2.batchId);
+    const rows = (await list(ana, card)).filter((i) => i.description.startsWith('LOJA PARCELADA'));
+    const byDesc = Object.fromEntries(rows.map((r) => [r.description, r.statementMonth]));
+    expect(byDesc['LOJA PARCELADA PARC 01/03']).toBe('2026-09-01');
+    expect(byDesc['LOJA PARCELADA PARC 02/03']).toBe('2026-10-01');
+  });
+
+  it('FITID repetido com data ou valor diferentes não esconde lançamentos novos', async () => {
+    const ofx = (date: string, amount: string) => `OFXHEADER:100
+<OFX><STMTTRN><DTPOSTED>${date}<TRNAMT>${amount}<FITID>000000<MEMO>DOC</MEMO></STMTTRN></OFX>`;
+    const a = (
+      await preview(ana, checking, ofx('20260901', '-10.00'), { filename: 'x.ofx' })
+    ).json();
+    await commit(ana, a.batchId);
+    const b = (
+      await preview(ana, checking, ofx('20260902', '-20.00'), { filename: 'y.ofx' })
+    ).json();
+    expect(b.summary).toMatchObject({ new: 1, imported: 0 });
+  });
+
+  it('mesmo arquivo em outra conta, ou depois de apagar os lançamentos, pode ser importado', async () => {
+    const content =
+      HEADER + line('15/09/2026', 'COMPRA CONTA ERRADA', 'Compra à vista', 'R$ 33,00');
+    const p = (await preview(ana, card, content)).json();
+    await commit(ana, p.batchId);
+    // Outra conta: libera.
+    const other = await preview(ana, checking, content);
+    expect(other.statusCode).toBe(200);
+    // Apaga o que veio do arquivo e reimporta na mesma conta.
+    const imported = (await list(ana, card)).filter((i) => i.description === 'COMPRA CONTA ERRADA');
+    for (const i of imported) await ana({ method: 'DELETE', url: `/v1/transactions/${i.id}` });
+    const again = await preview(ana, card, content);
+    expect(again.statusCode).toBe(200);
+    expect(again.json().summary.new).toBe(1);
+  });
+
+  it('commits concorrentes de arquivos que se sobrepõem pedem para tentar de novo', async () => {
+    const shared = line('16/09/2026', 'LINHA COMPARTILHADA', 'Compra à vista', 'R$ 7,77');
+    const a = (
+      await preview(
+        ana,
+        card,
+        HEADER + shared + line('16/09/2026', 'SO NO A', 'Compra à vista', 'R$ 1,11'),
+      )
+    ).json();
+    const b = (
+      await preview(
+        ana,
+        card,
+        HEADER + shared + line('16/09/2026', 'SO NO B', 'Compra à vista', 'R$ 2,22'),
+      )
+    ).json();
+    const [ra, rb] = await Promise.all([commit(ana, a.batchId), commit(ana, b.batchId)]);
+    const codes = [ra.statusCode, rb.statusCode].sort();
+    expect(codes).toEqual([200, 409]);
+    const loser = ra.statusCode === 409 ? ra : rb;
+    expect(loser.json().error.message).toContain('Tente');
+    expect(loser.json().error.message).not.toContain('já foi importado');
+  });
+
+  it('arquivo com mais de 2000 lançamentos pede para dividir', async () => {
+    let csv = HEADER;
+    for (let n = 0; n < 2001; n++)
+      csv += line('01/09/2026', `LOJA ${n}`, 'Compra à vista', 'R$ 1,00');
+    const res = await preview(ana, card, csv);
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.message).toContain('2000');
+  });
+
   it('isolamento, conta arquivada e entradas inválidas', async () => {
     const content = HEADER + line('14/10/2026', 'SEGREDO DA ANA', 'Compra à vista', 'R$ 5,00');
     const p = (await preview(ana, card, content)).json();

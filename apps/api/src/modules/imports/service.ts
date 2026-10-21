@@ -14,7 +14,7 @@ import {
   transactions,
   withTenant,
 } from '@finlens/db';
-import { normalize, parseImport, statementMonth } from '@finlens/domain';
+import { addMonths, normalize, parseImport, statementMonth } from '@finlens/domain';
 import { and, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { ApiError, notFound } from '../../http/errors';
 import { findAccount } from '../accounts/repository';
@@ -22,7 +22,7 @@ import { activeCategories } from '../classification/evidence';
 import { categorize } from '../transactions/categorize';
 import { autoLinkFor } from '../transfers/queries';
 
-const MAX_ROWS = 5000;
+const MAX_ROWS = 2000;
 const PREVIEW_TTL_HOURS = 24;
 const ALREADY_IMPORTED = 'Este arquivo já foi importado.';
 
@@ -40,13 +40,15 @@ function withKeys(
 ): ImportBatchRow[] {
   const seen = new Map<string, number>();
   return rows.map((r) => {
+    // FITID sozinho não basta: alguns bancos o repetem entre arquivos. A parcela entra na
+    // chave porque o normalizador a remove e as faturas repetem a data da compra.
+    const norm = normalize(r.description);
+    const parcel = norm.installment ? `p${norm.installment.current}/${norm.installment.total}` : '';
     const base = r.externalId
-      ? `fitid:${r.externalId}`
-      : [
-          r.postedDate,
-          r.amountCents.toString(),
-          normalize(r.description).normalized || r.description,
-        ].join('|');
+      ? ['fitid', r.externalId, r.postedDate, r.amountCents.toString()].join('|')
+      : [r.postedDate, r.amountCents.toString(), norm.normalized || r.description, parcel].join(
+          '|',
+        );
     const ordinal = seen.get(base) ?? 0;
     seen.set(base, ordinal + 1);
     return {
@@ -115,9 +117,25 @@ async function activeAccount(tx: Tx, accountId: string) {
   return account;
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  const e = err as { code?: string; cause?: { code?: string } };
-  return e?.code === '23505' || e?.cause?.code === '23505';
+/**
+ * Mês da fatura. A parcela n de uma compra vem com a data original da compra: cai n-1 meses
+ * depois da fatura da primeira parcela.
+ */
+function cardStatementMonth(description: string, postedDate: string, closingDay: number): string {
+  const base = statementMonth(postedDate, closingDay);
+  const parcel = /PARC (\d{2})\/\d{2}$/.exec(description);
+  const shift = parcel ? Math.max(0, Number(parcel[1]) - 1) : 0;
+  return shift === 0 ? base : `${addMonths(base.slice(0, 7), shift)}-01`;
+}
+
+function uniqueViolation(err: unknown): string | null {
+  const e = err as {
+    code?: string;
+    constraint?: string;
+    cause?: { code?: string; constraint?: string };
+  };
+  if (e?.code !== '23505' && e?.cause?.code !== '23505') return null;
+  return e.constraint ?? e.cause?.constraint ?? '';
 }
 
 export async function previewImport(
@@ -141,10 +159,32 @@ export async function previewImport(
   return withTenant(db, ctx, async (tx) => {
     const account = await activeAccount(tx, input.accountId);
     const [done] = await tx
-      .select({ id: importBatches.id })
+      .select()
       .from(importBatches)
-      .where(and(eq(importBatches.fileSha256, fileSha), eq(importBatches.status, 'committed')));
-    if (done) throw new ApiError(409, 'conflict', ALREADY_IMPORTED, { content: ALREADY_IMPORTED });
+      .where(
+        and(
+          eq(importBatches.fileSha256, fileSha),
+          eq(importBatches.accountId, account.id),
+          eq(importBatches.status, 'committed'),
+        ),
+      );
+    if (done) {
+      // Se os lançamentos daquele arquivo foram apagados, ele pode ser importado de novo.
+      const [still] = await tx
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          inArray(
+            transactions.importKey,
+            done.rows.slice(0, 1000).map((r) => r.key),
+          ),
+        )
+        .limit(1);
+      if (still) {
+        throw new ApiError(409, 'conflict', ALREADY_IMPORTED, { content: ALREADY_IMPORTED });
+      }
+      await tx.delete(importBatches).where(eq(importBatches.id, done.id));
+    }
 
     await tx
       .delete(importBatches)
@@ -241,7 +281,7 @@ export async function commitImport(
             postedDate: row.postedDate,
             statementMonth:
               account.type === 'credit_card'
-                ? statementMonth(row.postedDate, account.closingDay ?? 31)
+                ? cardStatementMonth(row.description, row.postedDate, account.closingDay ?? 31)
                 : null,
             amountCents,
             description: row.description,
@@ -259,7 +299,15 @@ export async function commitImport(
       };
     });
   } catch (err) {
-    if (isUniqueViolation(err)) throw new ApiError(409, 'conflict', ALREADY_IMPORTED);
-    throw err;
+    const constraint = uniqueViolation(err);
+    if (constraint === null) throw err;
+    if (constraint === 'import_batches_committed_sha_idx') {
+      throw new ApiError(409, 'conflict', ALREADY_IMPORTED);
+    }
+    throw new ApiError(
+      409,
+      'conflict',
+      'Outra importação gravou lançamentos iguais ao mesmo tempo. Tente novamente.',
+    );
   }
 }

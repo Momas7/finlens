@@ -31,6 +31,10 @@ export function parseImport(text: string, mapping?: ColumnMapping): ParseImportR
     return { kind: 'error', message: 'Não encontrei lançamentos neste arquivo.' };
   }
   if (isInterCardHeader(header)) return rowsOrError('csv', parseInterCard(table));
-  if (!mapping) return { kind: 'needs_mapping', headers: header, sample: table.slice(1, 4) };
+  if (!mapping) {
+    // O mapeamento só aceita as 51 primeiras colunas; células enormes não vão para a tela.
+    const cut = (row: string[]) => row.slice(0, 51).map((c) => c.slice(0, 100));
+    return { kind: 'needs_mapping', headers: cut(header), sample: table.slice(1, 4).map(cut) };
+  }
   return rowsOrError('csv', parseMapped(table, mapping));
 }

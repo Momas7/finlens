@@ -363,9 +363,9 @@ export const importBatches = pgTable(
       columns: [t.workspaceId, t.accountId],
       foreignColumns: [financialAccounts.workspaceId, financialAccounts.id],
     }),
-    // O mesmo arquivo não é importado duas vezes.
+    // O mesmo arquivo não é importado duas vezes na mesma conta.
     uniqueIndex('import_batches_committed_sha_idx')
-      .on(t.workspaceId, t.fileSha256)
+      .on(t.workspaceId, t.accountId, t.fileSha256)
       .where(sql`${t.status} = 'committed'`),
     check('import_batches_status_check', sql`${t.status} in ('preview', 'committed')`),
     check('import_batches_format_check', sql`${t.format} in ('ofx', 'csv')`),

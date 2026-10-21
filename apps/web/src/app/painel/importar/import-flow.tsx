@@ -1,7 +1,14 @@
 'use client';
 
 import type { Account } from '@finlens/contracts';
-import { type FormEvent, startTransition, useActionState, useState } from 'react';
+import {
+  type FormEvent,
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Panel } from '@/components/ui/panel';
@@ -65,12 +72,17 @@ function Preview({
 }) {
   const [state, action, pending] = useActionState<CommitState, FormData>(commitStatement, {});
   const { summary } = preview;
+  // Troca de passo: o botão do formulário some, então o foco vai para o título da prévia.
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), []);
   const fresh = preview.rows.filter((r) => r.status === 'new');
   const repeated = preview.rows.filter((r) => r.status !== 'new');
   return (
     <div className="space-y-6">
       <Panel className="space-y-2 p-5">
-        <h2 className="font-semibold">Prévia da importação</h2>
+        <h2 ref={heading} tabIndex={-1} className="font-semibold outline-none">
+          Prévia da importação
+        </h2>
         <p role="status">
           {summary.total} {summary.total === 1 ? 'lançamento' : 'lançamentos'} no arquivo:{' '}
           <strong>{summary.new} novos</strong>, {summary.imported} já importados, {summary.existing}{' '}
@@ -130,13 +142,27 @@ function Preview({
 export function ImportFlow({ accounts }: { accounts: Account[] }) {
   const [state, action, pending] = useActionState<ImportState, FormData>(previewStatement, {});
   const [dismissed, setDismissed] = useState<unknown>(null);
-  const fields = state.fieldErrors ?? {};
+  const [clientError, setClientError] = useState<string>();
+  const fields: Record<string, string | undefined> = {
+    ...state.fieldErrors,
+    ...(clientError && { file: clientError }),
+  };
   const mapping = state.needsMapping;
+  const mappingBox = useRef<HTMLFieldSetElement>(null);
+  useEffect(() => {
+    if (mapping) mappingBox.current?.focus();
+  }, [mapping]);
 
   // Enviar por aqui mantém o arquivo escolhido quando a ação pede o mapeamento.
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const file = data.get('file');
+    if (file instanceof File && file.size > 5 * 1024 * 1024) {
+      setClientError('O arquivo passa de 5 MB.');
+      return;
+    }
+    setClientError(undefined);
     startTransition(() => action(data));
   }
 
@@ -172,7 +198,11 @@ export function ImportFlow({ accounts }: { accounts: Account[] }) {
       />
 
       {mapping && columns && (
-        <fieldset className="space-y-4 rounded-[6px] border border-scale p-4">
+        <fieldset
+          ref={mappingBox}
+          tabIndex={-1}
+          className="space-y-4 rounded-[6px] border border-scale p-4 outline-none"
+        >
           <legend className="px-1 text-[13px] font-medium">Não reconheci este formato</legend>
           <p className="text-[13px] text-ink-soft">
             Diga onde está cada informação. Primeira linha do arquivo: {mapping.headers.join(' · ')}

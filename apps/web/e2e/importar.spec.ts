@@ -29,6 +29,7 @@ test('importar a fatura do Inter: prévia, confirmar e repetir', async ({ page }
     page.getByRole('status').filter({ hasText: '4 lançamentos no arquivo' }),
   ).toContainText('4 novos');
   await expect(page.getByRole('status')).toContainText('1 pagamentos de fatura');
+  await expect(page.getByRole('heading', { name: 'Prévia da importação' })).toBeFocused();
   await expect(page.getByText('LOJA ALFA CENTRO SALVADOR BRA PARC 01/02')).toBeVisible();
   await page.getByRole('button', { name: 'Importar 4' }).click();
 
@@ -56,6 +57,7 @@ test('CSV desconhecido pede o mapeamento das colunas', async ({ page }) => {
   });
   await page.getByRole('button', { name: 'Ler arquivo' }).click();
   await expect(page.getByText('Não reconheci este formato')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Não reconheci este formato' })).toBeFocused();
   await page.getByLabel('O gasto aparece como').selectOption('positive');
   await page.getByRole('button', { name: 'Ver prévia' }).click();
   await expect(page.getByRole('status')).toContainText('2 novos');

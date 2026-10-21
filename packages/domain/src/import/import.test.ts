@@ -196,6 +196,24 @@ describe('CSV genérico', () => {
   });
 });
 
+describe('limites', () => {
+  it('valor com mais de 15 dígitos não é dinheiro válido', () => {
+    expect(parseBrMoney('1234567890123456')).toBeNull();
+    expect(parseBrMoney('R$ 999.999.999.999.999,99')).toBeNull();
+    expect(parseBrMoney('9999999999999,99')).toBe(999999999999999n);
+  });
+
+  it('o pedido de mapeamento limita colunas e tamanho das células', () => {
+    const wide = `${Array.from({ length: 300 }, (_, i) => `c${i}`).join(';')}\n${Array.from({ length: 300 }, () => 'x'.repeat(500)).join(';')}\n`;
+    const result = parseImport(wide);
+    expect(result.kind).toBe('needs_mapping');
+    if (result.kind !== 'needs_mapping') return;
+    expect(result.headers).toHaveLength(51);
+    expect(result.sample[0]).toHaveLength(51);
+    expect(result.sample[0]?.[0]?.length).toBeLessThanOrEqual(100);
+  });
+});
+
 describe('erros', () => {
   it('vazio, sem linhas e sem lançamentos válidos', () => {
     expect(parseImport('  \n')).toMatchObject({ kind: 'error' });

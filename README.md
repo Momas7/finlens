@@ -190,6 +190,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 | F3b | Recorrências e assinaturas (cobrança que não veio, aumento de preço) | ✅ |
 | F3c | Parcelas e compromisso futuro | ✅ |
 | F6b | Exportar e excluir os próprios dados | ✅ |
+| F8 | 2FA (TOTP) e registro de atividade da conta | ✅ |
 | F7 | IA local opcional como último recurso da classificação (só no botão) | ✅ |
 
 ## Segurança
@@ -198,6 +199,7 @@ Os testes de integração criam um database temporário por arquivo de teste e o
 - Senhas com argon2id. Cookies `HttpOnly` e `SameSite=Lax`, `Secure` em produção.
 - Rate limit global e um limite mais restrito em login e cadastro.
 - Logs com redaction de cookies, headers de autorização e senhas.
+- Verificação em duas etapas (2FA) opcional, por aplicativo autenticador (TOTP), com 10 códigos de reserva de uso único. Em "Sua conta" você ativa, desativa e vê a atividade recente (logins, 2FA, exportações e importações) com o IP de cada evento. Atrás de um proxy reverso, configure `TRUSTED_PROXIES` para o IP registrado ser o real.
 - Seus dados são seus: em "Sua conta" você baixa tudo (JSON completo ou CSV de lançamentos para planilha) e pode excluir a conta, o que apaga todos os dados em cascata.
 - Nenhum dado financeiro real entra no repositório: as fixtures são sintéticas, `fixtures/private/` está no `.gitignore` e o gitleaks varre o histórico no CI.
 

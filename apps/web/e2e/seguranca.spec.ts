@@ -4,7 +4,7 @@ import { totp } from './totp';
 
 const security = (page: Page) => page.getByRole('region', { name: /Segurança/ });
 
-export async function enableTwoFactor(page: Page) {
+async function enableTwoFactor(page: Page) {
   await page.goto('/painel/conta');
   await page.getByRole('button', { name: 'Ativar 2FA' }).click();
   await security(page).getByLabel('Senha atual').fill(PASSWORD);

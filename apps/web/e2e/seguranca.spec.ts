@@ -81,3 +81,23 @@ test('desativar o 2FA volta ao login simples e a atividade registra', async ({ p
   await logIn(page, email);
   await expect(page).toHaveURL(/\/painel/);
 });
+
+test('desafio esgotado volta ao primeiro passo em vez de travar', async ({ page }) => {
+  test.setTimeout(150_000);
+  const email = await signUp(page);
+  await enableTwoFactor(page);
+  await signOut(page);
+  await logIn(page, email);
+  await expect(page.getByRole('heading', { name: 'Confirme que é você' })).toBeVisible();
+  // O plugin encerra o desafio depois de várias tentativas erradas.
+  for (let i = 0; i < 8; i++) {
+    await page.getByLabel('Código do aplicativo').fill('000000');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page.getByText(/Código inválido\.|Sua verificação expirou/)).toBeVisible();
+    if (await page.getByText('Sua verificação expirou. Entre de novo.').isVisible()) break;
+  }
+  await expect(page.getByText('Sua verificação expirou. Entre de novo.')).toBeVisible();
+  // De volta ao primeiro passo, com o formulário de senha.
+  await expect(page.getByLabel('Senha')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
+});

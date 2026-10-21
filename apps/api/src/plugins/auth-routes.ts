@@ -6,6 +6,16 @@ import type { Config } from '../config';
 import { recordAudit } from '../modules/audit/record';
 
 /** Encaminha /api/auth/* para o handler Fetch do Better Auth. */
+// Só o fluxo que a tela usa. O resto do plugin (get-totp-uri devolve o segredo; send-otp e
+// verify-otp não estão configurados) fica fechado.
+const TWO_FACTOR_ALLOWED = new Set([
+  'enable',
+  'disable',
+  'verify-totp',
+  'verify-backup-code',
+  'generate-backup-codes',
+]);
+
 export async function authRoutes(
   app: FastifyInstance,
   opts: { auth: Auth; config: Config; db: Db },
@@ -15,6 +25,14 @@ export async function authRoutes(
   };
   const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     const url = new URL(request.url, opts.config.betterAuthUrl);
+    const rawPath = request.url.split('?')[0] ?? '';
+    // O Fastify casa o caminho cru e o Better Auth o normalizado: segmentos `..` escapariam do
+    // limite estrito de tentativas.
+    if (/\.\.|%2e/i.test(rawPath)) return reply.status(404).send({ error: 'not_found' });
+    if (url.pathname.startsWith('/api/auth/two-factor/')) {
+      const name = url.pathname.slice('/api/auth/two-factor/'.length);
+      if (!TWO_FACTOR_ALLOWED.has(name)) return reply.status(404).send({ error: 'not_found' });
+    }
     const headers = new Headers();
     for (const [key, value] of Object.entries(request.headers)) {
       if (value === undefined) continue;
@@ -25,12 +43,23 @@ export async function authRoutes(
     const before = path.startsWith('/api/auth/two-factor/')
       ? await opts.auth.api.getSession({ headers }).catch(() => null)
       : null;
-    const hasBody = request.body !== undefined && request.body !== null;
+    // "Confiar neste dispositivo" pularia o 2FA por 30 dias; `disableSession` devolve 200 sem
+    // sessão. A tela não usa nenhum dos dois.
+    let body = request.body;
+    if (path.startsWith('/api/auth/two-factor/verify-') && body && typeof body === 'object') {
+      const {
+        trustDevice: _trust,
+        disableSession: _disable,
+        ...rest
+      } = body as Record<string, unknown>;
+      body = rest;
+    }
+    const hasBody = body !== undefined && body !== null;
     const response = await opts.auth.handler(
       new Request(url, {
         method: request.method,
         headers,
-        body: hasBody ? JSON.stringify(request.body) : undefined,
+        body: hasBody ? JSON.stringify(body) : undefined,
       }),
     );
 

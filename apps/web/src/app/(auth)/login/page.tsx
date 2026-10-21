@@ -26,6 +26,13 @@ export default function LoginPage() {
         : await authClient.twoFactor.verifyTotp({ code });
       setPending(false);
       if (codeError) {
+        // Desafio vencido (10 min) ou esgotado (5 erros): o código certo também falharia.
+        if (/TWO_FACTOR_COOKIE|TOO_MANY_ATTEMPTS/.test(String(codeError.code))) {
+          setSecondStep(false);
+          setUseBackup(false);
+          setError('Sua verificação expirou. Entre de novo.');
+          return;
+        }
         setError(
           codeError.status === 429
             ? 'Muitas tentativas. Tente novamente em instantes.'
@@ -74,6 +81,7 @@ export default function LoginPage() {
             name="code"
             autoComplete="one-time-code"
             inputMode={useBackup ? 'text' : 'numeric'}
+            autoFocus
             required
           />
           {error && (
@@ -85,6 +93,17 @@ export default function LoginPage() {
             Entrar
           </Button>
         </form>
+        <button
+          type="button"
+          onClick={() => {
+            setSecondStep(false);
+            setUseBackup(false);
+            setError(null);
+          }}
+          className="mt-6 mr-6 text-[13px] text-ink-soft underline underline-offset-4"
+        >
+          Voltar
+        </button>
         <button
           type="button"
           onClick={() => {

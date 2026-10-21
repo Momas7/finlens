@@ -8,6 +8,14 @@ import { Field } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
 
 type Setup = { uri: string; secret: string; qr: string; codes: string[] };
+/** Mensagem do erro: 400/401 é senha; 403 é sessão antiga demais para ação sensível. */
+function failure(err: { status?: number }): string {
+  if (err.status === 429) return 'Muitas tentativas. Tente novamente em instantes.';
+  if (err.status === 403) return 'Por segurança, saia e entre de novo antes de alterar o 2FA.';
+  if (err.status && err.status >= 500) return 'Não foi possível concluir agora. Tente novamente.';
+  return 'Senha incorreta.';
+}
+
 type Mode = 'idle' | 'enable' | 'codes' | 'disable';
 
 function Codes({ codes }: { codes: string[] }) {
@@ -18,7 +26,7 @@ function Codes({ codes }: { codes: string[] }) {
     a.href = url;
     a.download = 'finlens-codigos-de-reserva.txt';
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
     <div className="space-y-3">
@@ -67,7 +75,7 @@ export function SecuritySection({ enabled }: { enabled: boolean }) {
     });
     setPending(false);
     if (err || !data || !('totpURI' in data) || !data.totpURI) {
-      setError('Senha incorreta.');
+      setError(failure(err ?? {}));
       return;
     }
     const secret = new URL(data.totpURI).searchParams.get('secret') ?? '';
@@ -91,6 +99,7 @@ export function SecuritySection({ enabled }: { enabled: boolean }) {
       return;
     }
     setSetup(null);
+    setFresh(null);
     setMode('idle');
     setDone('2FA ativado. Da próxima vez, o login pede o código do aplicativo.');
     router.refresh();
@@ -105,10 +114,11 @@ export function SecuritySection({ enabled }: { enabled: boolean }) {
     });
     setPending(false);
     if (err || !data) {
-      setError('Senha incorreta.');
+      setError(failure(err ?? {}));
       return;
     }
     setFresh(data.backupCodes);
+    setDone(null);
     setMode('idle');
     router.refresh();
   }
@@ -122,9 +132,10 @@ export function SecuritySection({ enabled }: { enabled: boolean }) {
     });
     setPending(false);
     if (err) {
-      setError('Senha incorreta.');
+      setError(failure(err));
       return;
     }
+    setFresh(null);
     setMode('idle');
     setDone('2FA desativado.');
     router.refresh();

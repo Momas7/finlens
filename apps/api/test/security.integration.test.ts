@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { request as httpRequest } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp, type TestApp } from './helpers';
 
@@ -157,6 +158,7 @@ describe('2FA e registro de atividade', () => {
       cookiesOf(attempt),
     );
     expect(stale.statusCode).toBeGreaterThanOrEqual(400);
+    backup = fresh;
   });
 
   it('o registro é só de quem o fez e o export traz sem segredos', async () => {
@@ -172,6 +174,62 @@ describe('2FA e registro de atividade', () => {
     await t.as(session)({ method: 'GET', url: '/v1/me/export.csv' });
     const csv = (await activity()).find((a) => a.event === 'data_exported');
     expect(csv?.meta).toMatchObject({ format: 'csv' });
+  });
+
+  it('rotas do plugin fora do fluxo ficam fechadas', async () => {
+    const uri = await post('/api/auth/two-factor/get-totp-uri', { password: PASSWORD }, session);
+    expect(uri.statusCode).toBe(404);
+    expect(uri.body).not.toContain('secret=');
+    // Pela rede, o caminho chega cru (o inject normaliza antes do roteador).
+    await t.app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = t.app.server.address() as { port: number };
+    for (const raw of [
+      '/api/auth/x/../two-factor/verify-totp',
+      '/api/auth/x/%2e%2e/sign-in/email',
+    ]) {
+      const status = await new Promise<number>((resolve, reject) => {
+        const req = httpRequest(
+          {
+            host: '127.0.0.1',
+            port,
+            path: raw,
+            method: 'POST',
+            headers: { 'content-type': 'application/json', origin: 'http://localhost:3000' },
+          },
+          (res) => {
+            res.resume();
+            resolve(res.statusCode ?? 0);
+          },
+        );
+        req.on('error', reject);
+        req.end('{}');
+      });
+      expect(status, raw).toBe(404);
+    }
+  });
+
+  it('o servidor ignora confiar no dispositivo e disableSession', async () => {
+    const before = await count('sign_in');
+    const attempt = await signIn();
+    const trusted = await post(
+      '/api/auth/two-factor/verify-totp',
+      { code: totp(secret), trustDevice: true },
+      cookiesOf(attempt),
+    );
+    expect(trusted.statusCode).toBe(200);
+    expect(JSON.stringify(trusted.headers['set-cookie'])).not.toContain('trust_device');
+    expect(await count('sign_in')).toBe(before + 1);
+    // Sem o cookie de confiança, o próximo login volta a pedir o código.
+    expect((await signIn()).json()).toMatchObject({ twoFactorRedirect: true });
+
+    const second = await signIn();
+    const fake = await post(
+      '/api/auth/two-factor/verify-backup-code',
+      { code: backup[2] ?? '', disableSession: true },
+      cookiesOf(second),
+    );
+    expect(fake.statusCode).toBe(200);
+    expect(await count('sign_in')).toBe(before + 2);
   });
 
   it('desativar exige a senha e volta ao login simples', async () => {

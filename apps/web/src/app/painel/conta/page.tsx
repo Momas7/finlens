@@ -8,7 +8,11 @@ import { DeleteAccountForm } from './delete-form';
 import { SecuritySection } from './security';
 
 export default async function ContaPage() {
-  const [me, activity] = await Promise.all([getMe(), apiFetch('/v1/me/activity', ActivityList)]);
+  const [me, activity] = await Promise.all([
+    getMe(),
+    // A atividade é acessória: se falhar, exportar e excluir a conta continuam disponíveis.
+    apiFetch('/v1/me/activity', ActivityList).catch(() => null),
+  ]);
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -39,7 +43,13 @@ export default async function ContaPage() {
             Os últimos 20 eventos da sua conta, com o IP de onde vieram.
           </p>
         </div>
-        <Activity items={activity} />
+        {activity ? (
+          <Activity items={activity} />
+        ) : (
+          <p role="alert" className="text-[13px] text-mark">
+            Não foi possível carregar a atividade agora.
+          </p>
+        )}
       </Panel>
 
       <Panel as="section" aria-labelledby="export-title" className="space-y-4 p-5">

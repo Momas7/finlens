@@ -38,7 +38,7 @@ export const Transaction = z.object({
   amountCents: Cents,
   description: z.string(),
   notes: z.string().nullable(),
-  source: z.literal('manual'),
+  source: z.enum(['manual', 'import']),
   classificationStatus: ClassificationStatus,
   classificationSource: ClassificationSource.nullable(),
   classificationConfidence: z.number().nullable(),
